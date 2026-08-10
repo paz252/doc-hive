@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.google.api.client.util.Value;
+import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
 public class VectorStoreConfig {
