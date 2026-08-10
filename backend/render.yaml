@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: dochive-backend
+    env: docker
+    plan: free
+    branch: main
+    rootDir: backend
+    numInstances: 1
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: RESUME_DOC_PATH
+        value: classpath:docs/resume-portfolio.md
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SUPABASE_DB_URL
+        value: jdbc:postgresql://db.agaihfqishvoelbxwrck.supabase.co:5432/postgres?sslmode=require
+      - key: SUPABASE_DB_USER
+        value: postgres
+      - key: SUPABASE_DB_PASSWORD
+        sync: false
