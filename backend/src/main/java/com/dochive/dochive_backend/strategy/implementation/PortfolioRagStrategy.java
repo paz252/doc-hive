@@ -46,8 +46,8 @@ public class PortfolioRagStrategy implements RagStrategy {
     public List<Document> retrieveContext(String query, String targetId) {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
-                .topK(3)
-                .similarityThreshold(0.5)
+                .topK(5)
+                .similarityThreshold(0.3)
                 .build();
 
         return simpleVectorStore.similaritySearch(searchRequest);

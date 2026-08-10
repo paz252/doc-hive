@@ -49,9 +49,9 @@ public class VectorStoreConfig {
 
             // Step 2: Split text into token chunks
             TokenTextSplitter textSplitter = TokenTextSplitter.builder()
-                    .withChunkSize(800)
-                    .withMinChunkSizeChars(500)
-                    .withMinChunkLengthToEmbed(10)
+                    .withChunkSize(500)
+                    .withMinChunkSizeChars(100)
+                    .withMinChunkLengthToEmbed(5)
                     .withMaxNumChunks(10000)
                     .withKeepSeparator(true)
                     .build();

@@ -51,7 +51,7 @@ public class DocHiveRagStrategy implements RagStrategy {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
                 .topK(5)
-                .similarityThreshold(0.6)
+                .similarityThreshold(0.3)
                 .filterExpression(b.eq("documentId", targetId).build())
                 .build();
 
