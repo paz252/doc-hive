@@ -19,6 +19,7 @@ public class ChatRequest {
     @Builder.Default
     private String engine = "PORTFOLIO";
 
+    // requiredMode: NOT_REQUIRED by default
     @Schema(description = "Document UUID (required for DOCHIVE engine, optional/ignored for PORTFOLIO)")
     private String documentId;
 

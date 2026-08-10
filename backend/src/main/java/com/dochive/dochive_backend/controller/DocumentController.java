@@ -3,9 +3,11 @@ package com.dochive.dochive_backend.controller;
 import java.io.IOException;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/v1/documents")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
-@Tag(name = "Document Management", description = "Endpoints for uploading and retrieving ingestion metadata")
+@Tag(name = "Document Management", description = "Endpoints for uploading, retrieving, and deleting ingestion metadata")
 public class DocumentController {
 
     private final DocumentIngestionService ingestionService;
@@ -34,7 +36,7 @@ public class DocumentController {
     @Operation(summary = "Ingest document (PDF, DOCX, TXT, MD) into Vector Store")
     public ResponseEntity<DocumentMetaData> uploadDocument(@RequestParam("file") MultipartFile file) throws IOException {
         DocumentMetaData metadata = ingestionService.ingestDocument(file);
-        return ResponseEntity.ok(metadata);
+        return ResponseEntity.status(HttpStatus.CREATED).body(metadata);
     }
 
     @GetMapping
@@ -47,5 +49,12 @@ public class DocumentController {
     @Operation(summary = "Get metadata of specific document")
     public ResponseEntity<DocumentMetaData> getDocumentById(@PathVariable String id) {
         return ResponseEntity.ok(ingestionService.getDocumentById(id));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete document metadata and associated vector store embeddings")
+    public ResponseEntity<Void> deleteDocument(@PathVariable String id) {
+        ingestionService.deleteDocument(id);
+        return ResponseEntity.noContent().build();
     }
 }

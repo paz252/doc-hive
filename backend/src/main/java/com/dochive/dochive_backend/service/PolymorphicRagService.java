@@ -40,9 +40,7 @@ public class PolymorphicRagService {
 
                 // Retrieve context polymorphically
                 List<Document> contexts = strategy.retrieveContext(query, targetId);
-                String contextText = contexts.stream()
-                        .map(Document::getText)
-                        .collect(Collectors.joining("\n\n---\n\n"));
+                final String contextText = extractContextText(contexts);
 
                 ChatClient chatClient = chatClientBuilder.build();
 
@@ -69,5 +67,22 @@ public class PolymorphicRagService {
         });
 
         return emitter;
+    }
+
+    /**
+     * Helper method to safely extract and format text chunks, 
+     * keeping the caller method clean and effectively final.
+     */
+    private String extractContextText(List<Document> contexts) {
+        if (contexts == null || contexts.isEmpty()) {
+            return "NO_READABLE_TEXT_FOUND";
+        }
+
+        String joinedText = contexts.stream()
+                .map(Document::getText)
+                .filter(text -> text != null && !text.isBlank())
+                .collect(Collectors.joining("\n\n---\n\n"));
+
+        return joinedText.isBlank() ? "NO_READABLE_TEXT_FOUND" : joinedText;
     }
 }

@@ -18,6 +18,9 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Install Tesseract OCR binary and English language pack
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng
+
 # Install security patches and add a non-root group/user for Alpine
 RUN apk update && apk upgrade && \
     addgroup -S amangroup && adduser -S amansaxena -G amangroup
