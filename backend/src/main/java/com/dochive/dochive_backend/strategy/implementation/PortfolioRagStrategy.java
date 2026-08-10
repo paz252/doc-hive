@@ -33,7 +33,7 @@ public class PortfolioRagStrategy implements RagStrategy {
 
             ---------------------
             CONTEXT DATA SNAPSHOT:
-            {question_context}
+            {context}
             ---------------------
             """;
 
