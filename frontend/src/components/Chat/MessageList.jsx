@@ -23,7 +23,6 @@ export default function MessageList({
       sx={{
         flex: 1,
         minHeight: 0,
-        overflowY: "auto",
         px: 3,
         py: 3,
       }}

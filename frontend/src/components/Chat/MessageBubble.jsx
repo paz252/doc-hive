@@ -16,72 +16,82 @@ export default function MessageBubble({
   const isUser = message.role === "user";
 
   return (
-    <Stack
-      direction="row"
-      spacing={1.5}
-      justifyContent={
-        isUser ? "flex-end" : "flex-start"
-      }
-      sx={{ width: "100%" }}
+    <Box
+      sx={{
+        display: "flex",
+        width: "100%",
+        justifyContent: isUser
+          ? "flex-end"
+          : "flex-start",
+      }}
     >
-      {!isUser && (
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            bgcolor: "primary.main",
-          }}
-        >
-          <AutoAwesomeIcon fontSize="small" />
-        </Avatar>
-      )}
-
-      <Paper
-        elevation={0}
+      <Stack
+        direction="row"
+        spacing={1.5}
         sx={{
           maxWidth: "75%",
-          px: 2,
-          py: 1.25,
-          border: 1,
-          borderColor: isUser
-            ? "primary.main"
-            : "divider",
-          backgroundColor: isUser
-            ? "primary.main"
-            : "background.paper",
-          color: isUser
-            ? "primary.contrastText"
-            : "text.primary",
-          borderRadius: 2,
         }}
       >
-        <Typography
-          variant="body1"
-          sx={{
-            whiteSpace: "pre-wrap",
-            overflowWrap: "anywhere",
-          }}
-        >
-          {message.content}
-          {!isUser &&
-            message.content === "" && (
-              <span className="typing-indicator">
-                ●●●
-              </span>
-            )}
-        </Typography>
-      </Paper>
+        {!isUser && (
+          <Avatar
+            sx={{
+              width: 26,
+              height: 26,
+              bgcolor: "primary.main",
+              flexShrink: 0,
+            }}
+          >
+            <AutoAwesomeIcon fontSize="small" />
+          </Avatar>
+        )}
 
-      {isUser && (
-        <Avatar
+        <Paper
+          elevation={0}
           sx={{
-            width: 32,
-            height: 32,
+            px: 2,
+            py: 1.25,
+            border: 1,
+            borderColor: isUser
+              ? "primary.main"
+              : "divider",
+            backgroundColor: isUser
+              ? "primary.main"
+              : "background.paper",
+            color: isUser
+              ? "primary.contrastText"
+              : "text.primary",
+            borderRadius: 1.5,
           }}
         >
-          <PersonIcon fontSize="small" />
-        </Avatar>
-      )}
-    </Stack>
+          <Typography
+            variant="body1"
+            sx={{
+              whiteSpace: "pre-wrap",
+              overflowWrap: "anywhere",
+            }}
+          >
+            {message.content}
+            {!isUser &&
+              message.content === "" && (
+                <span className="typing-indicator">
+                  ●●●
+                </span>
+              )}
+          </Typography>
+        </Paper>
+
+        {isUser && (
+          <Avatar
+            sx={{
+              width: 26,
+              height: 26,
+              flexShrink: 0,
+            }}
+          >
+            <PersonIcon fontSize="small" />
+          </Avatar>
+        )}
+      </Stack>
+    </Box>
   );
 }

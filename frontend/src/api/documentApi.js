@@ -8,12 +8,24 @@ export async function getDocuments() {
 }
 
 export async function getDocument(id) {
-  const response = await apiClient.get(`${DOCUMENTS_URL}/${id}`);
+  const response = await apiClient.get(
+    `${DOCUMENTS_URL}/${id}`
+  );
+
+  return response.data;
+}
+
+export async function getDocumentChunks(id) {
+  const response = await apiClient.get(
+    `${DOCUMENTS_URL}/${id}/chunks`
+  );
+
   return response.data;
 }
 
 export async function uploadDocument(file) {
   const formData = new FormData();
+
   formData.append("file", file);
 
   const response = await apiClient.post(
@@ -25,5 +37,7 @@ export async function uploadDocument(file) {
 }
 
 export async function deleteDocument(id) {
-  await apiClient.delete(`${DOCUMENTS_URL}/${id}`);
+  await apiClient.delete(
+    `${DOCUMENTS_URL}/${id}`
+  );
 }

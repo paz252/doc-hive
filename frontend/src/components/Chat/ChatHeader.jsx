@@ -1,60 +1,108 @@
 import {
   Box,
-  Chip,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 
-import DescriptionIcon from "@mui/icons-material/Description";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 
 export default function ChatHeader({
-  document,
+  allDocumentsSelected,
+  selectedDocuments,
   hasMessages,
   onClearChat,
 }) {
+  const contextLabel = allDocumentsSelected
+    ? "All Documents"
+    : selectedDocuments.length === 0
+      ? "No Documents"
+      : selectedDocuments
+          .map((document) => document.fileName)
+          .join(", ");
+
   return (
     <Box
-      sx={{
+      sx={(theme) => ({
         px: 3,
-        py: 1.5,
-        borderBottom: 1,
-        borderColor: "divider",
+        py: 1,
+        border: "none",
         display: "flex",
         alignItems: "center",
         gap: 1.5,
-      }}
+        backgroundColor: theme.palette.surface.chatHeader,
+      })}
     >
-      <DescriptionIcon color="primary" />
-
-      <Box
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={0.75}
         sx={{
-          minWidth: 0,
           flex: 1,
+          minWidth: 0,
+          display: "flex",
+          alignItems: "center",
         }}
       >
-        <Typography
-          variant="subtitle1"
-          fontWeight={600}
-          noWrap
-        >
-          {document.fileName}
-        </Typography>
+        <Box
+          sx={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            backgroundColor: "#22c55e",
+            boxShadow:
+              "0 0 2px #22c55e, 0 0 12px rgba(34,197,94,0.6)",
+            flexShrink: 0,
+            display: "block",
+            mt: "1px",
+            animation: "statusPulse 1.8s ease-in-out infinite",
+            "@keyframes statusPulse": {
+              "0%": {
+                opacity: 0.6,
+                transform: "scale(0.95)",
+                boxShadow:
+                  "0 0 0 rgba(34,197,94,0), 0 0 0 rgba(34,197,94,0)",
+              },
+              "50%": {
+                opacity: 1,
+                transform: "scale(1)",
+                boxShadow:
+                  "0 0 2px #22c55e, 0 0 16px rgba(34,197,94,0.7)",
+              },
+              "100%": {
+                opacity: 0.6,
+                transform: "scale(0.95)",
+                boxShadow:
+                  "0 0 0 rgba(34,197,94,0), 0 0 0 rgba(34,197,94,0)",
+              },
+            },
+          }}
+        />
 
         <Typography
           variant="caption"
-          color="text.secondary"
+          noWrap
+          title={contextLabel}
+          sx={(theme) => ({
+            letterSpacing: 0.5,
+            color:
+              theme.palette.mode === "dark"
+                ? theme.palette.text.secondary
+                : theme.palette.text.disabled,
+            ".context-label": {
+              color:
+                theme.palette.mode === "dark"
+                  ? theme.palette.common.white
+                  : theme.palette.text.primary,
+              fontWeight: 700,
+            },
+          })}
         >
-          {document.totalChunks} chunks
+          <span style={{ color: "inherit" }}>Context:</span>{" "}
+          <span className="context-label">{contextLabel}</span>
         </Typography>
-      </Box>
-
-      <Chip
-        label="DocHive"
-        size="small"
-        variant="outlined"
-      />
+      </Stack>
 
       <Tooltip title="Clear chat">
         <span>
@@ -63,8 +111,15 @@ export default function ChatHeader({
             onClick={onClearChat}
             disabled={!hasMessages}
             aria-label="Clear chat"
+            sx={{
+              fontSize: "0.75rem",
+              px: 1,
+              borderRadius: 1,
+              color: "text.secondary",
+            }}
           >
-            <DeleteSweepOutlinedIcon />
+            <DeleteSweepOutlinedIcon sx={{ fontSize: 16, mr: 0.5 }} />
+            <span>Clear</span>
           </IconButton>
         </span>
       </Tooltip>

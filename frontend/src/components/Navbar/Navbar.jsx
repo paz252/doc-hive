@@ -19,10 +19,10 @@ export default function Navbar({
       position="static"
       color="transparent"
       elevation={0}
-      sx={{
-        borderBottom: 1,
-        borderColor: "divider",
-      }}
+      sx={(theme) => ({
+        backgroundColor: theme.palette.surface.navbar,
+        border: "none",
+      })}
     >
       <Toolbar>
         <Typography

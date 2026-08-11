@@ -2,7 +2,7 @@ const CHAT_URL =
   "https://dochive-backend.onrender.com/api/v1/chat/stream";
 
 export async function streamChat({
-  documentId,
+  documentIds,
   query,
   onChunk,
   signal,
@@ -15,7 +15,7 @@ export async function streamChat({
     },
     body: JSON.stringify({
       engine: "DOCHIVE",
-      documentId,
+      documentIds,
       query,
     }),
     signal,
@@ -28,7 +28,9 @@ export async function streamChat({
   }
 
   if (!response.body) {
-    throw new Error("Streaming is not supported.");
+    throw new Error(
+      "Streaming is not supported."
+    );
   }
 
   const reader = response.body.getReader();
@@ -37,7 +39,8 @@ export async function streamChat({
   let buffer = "";
 
   while (true) {
-    const { value, done } = await reader.read();
+    const { value, done } =
+      await reader.read();
 
     if (done) {
       break;
@@ -59,22 +62,6 @@ export async function streamChat({
           continue;
         }
 
-        const data = line
-          .slice(5)
-          .trim();
-
-        if (data) {
-          onChunk(data);
-        }
-      }
-    }
-  }
-
-  if (buffer.trim()) {
-    const lines = buffer.split("\n");
-
-    for (const line of lines) {
-      if (line.startsWith("data:")) {
         const data = line
           .slice(5)
           .trim();

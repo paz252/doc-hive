@@ -3,46 +3,67 @@ import {
   IconButton,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
-import { Description as DescriptionIcon, Delete as DeleteOutlineIcon } from "@mui/icons-material";
+import DescriptionIcon from "@mui/icons-material/Description";
+import DeleteIcon from "@mui/icons-material/Delete";
+import InfoIcon from "@mui/icons-material/Info";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircle";
 
 import { formatFileSize } from "../../utils/formatFileSize";
-import { formatDate } from "../../utils/formatDate";
 
 export default function DocumentItem({
   document,
   selected,
   onSelect,
+  onInfo,
   onDelete,
 }) {
   return (
     <Paper
       variant="outlined"
       onClick={() => onSelect(document)}
-      sx={{
-        p: 1.25,
+      sx={(theme) => ({
+        p: 2,
         cursor: "pointer",
-        borderColor: selected
-          ? "primary.main"
-          : "divider",
+        border: "none",
         backgroundColor: selected
-          ? "action.selected"
-          : "background.paper",
-        transition: "border-color 0.2s",
-      }}
+          ? theme.palette.surface.documentItemSelected
+          : theme.palette.surface.documentItem,
+        transition: "background-color 0.2s ease",
+        "&:hover": {
+          backgroundColor: selected
+            ? theme.palette.surface.documentItemSelected
+            : theme.palette.action.hover,
+        },
+        "&:hover .document-item-actions": {
+          opacity: 1,
+          pointerEvents: "auto",
+        },
+      })}
     >
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="flex-start"
+      >
         <DescriptionIcon
-          color="primary"
-          sx={{ mt: 0.25 }}
+          color="secondary"
+          sx={{
+            mt: 0.1,
+            flexShrink: 0,
+          }}
         />
 
         <Box
           sx={{
             flex: 1,
             minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: 0.5,
           }}
         >
           <Typography
@@ -54,35 +75,143 @@ export default function DocumentItem({
             {document.fileName}
           </Typography>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            display="block"
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 0,
+              minWidth: 0,
+            }}
           >
-            {formatFileSize(document.fileSize)}
-            {" · "}
-            {document.totalChunks} chunks
-          </Typography>
+            <Typography
+              variant="caption"
+              sx={(theme) => ({
+                fontSize: "0.7rem",
+                color: theme.palette.text.secondary,
+              })}
+            >
+              {formatFileSize(document.fileSize)}
+            </Typography>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            display="block"
+            <Stack
+              direction="row"
+              spacing={0}
+              onClick={(event) => event.stopPropagation()}
+              className="document-item-actions"
+              sx={{
+                opacity: 0,
+                pointerEvents: "none",
+                transition: "opacity 0.2s ease",
+                "&:hover": {
+                  opacity: 1,
+                  pointerEvents: "auto",
+                },
+              }}
+            >
+              <Tooltip title="Document information">
+                <IconButton
+                  size="small"
+                  onClick={() => onInfo(document)}
+                  sx={{
+                    color: "text.secondary",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    outline: "none",
+                    p: 0.35,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      color: "#22d3ee",
+                      backgroundColor: "transparent",
+                      boxShadow: "0 0 10px rgba(34, 211, 238, 0.6)",
+                      outline: "none",
+                    },
+                    "&.Mui-focusVisible": {
+                      outline: "none",
+                      boxShadow: "none",
+                    },
+                  }}
+                >
+                  <InfoIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+
+              <Tooltip title="Delete document">
+                <IconButton
+                  size="small"
+                  onClick={() => onDelete(document)}
+                  sx={{
+                    color: "text.secondary",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    outline: "none",
+                    p: 0.35,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      color: "#ef4444",
+                      backgroundColor: "transparent",
+                      boxShadow: "0 0 10px rgba(239, 68, 68, 0.6)",
+                      outline: "none",
+                    },
+                    "&.Mui-focusVisible": {
+                      outline: "none",
+                      boxShadow: "none",
+                    },
+                  }}
+                >
+                  <DeleteIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 0.1,
+              width: "100%",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
           >
-            Uploaded {formatDate(document.uploadedAt)}
-          </Typography>
+            <Typography
+              variant="caption"
+              sx={(theme) => ({
+                color: theme.palette.text.secondary,
+              })}
+            >
+              {document.totalChunks} chunks
+            </Typography>
+
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.2}
+              sx={{
+                color: "success.main",
+                ml: "auto",
+                mt: "1px",
+              }}
+            >
+              <CheckCircleOutlineIcon
+                sx={{
+                  fontSize: 11,
+                  display: "block",
+                  transform: "translateY(1px)",
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "success.main",
+                  fontWeight: 600,
+                }}
+              >
+                Indexed
+              </Typography>
+            </Stack>
+          </Box>
         </Box>
-
-        <IconButton
-          size="small"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDelete(document);
-          }}
-          aria-label={`Delete ${document.fileName}`}
-        >
-          <DeleteOutlineIcon fontSize="small" />
-        </IconButton>
       </Stack>
     </Paper>
   );

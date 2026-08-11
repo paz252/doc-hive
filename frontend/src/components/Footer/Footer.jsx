@@ -8,20 +8,24 @@ export default function Footer() {
     <Box
       component="footer"
       sx={{
-        minHeight: 40,
-        px: 2,
+        minHeight: 'auto',
+        px: 3,
+        py: 0.1,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        borderTop: 1,
-        borderColor: "divider",
       }}
     >
       <Typography
         variant="caption"
-        color="text.secondary"
+        sx={{
+          fontSize: "0.65rem",
+          color: "text.secondary",
+          opacity: 0.75,
+          letterSpacing: 0.2,
+        }}
       >
-        DocHive · AI Document Assistant
+        &copy; 2026 &middot; DocHive · AI Document Assistant &middot; Built by Aman Saxena
       </Typography>
     </Box>
   );

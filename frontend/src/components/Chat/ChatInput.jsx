@@ -14,6 +14,7 @@ export default function ChatInput({
   streaming,
   onSend,
   onStop,
+  filename = "this document",
 }) {
   const [value, setValue] = useState("");
 
@@ -46,15 +47,21 @@ export default function ChatInput({
         event.preventDefault();
         handleSubmit();
       }}
-      sx={{
+      sx={(theme) => ({
         display: "flex",
         alignItems: "flex-end",
         gap: 1,
-        p: 1,
-        border: 1,
-        borderColor: "divider",
-        borderRadius: 3,
-      }}
+        p: 0.75,
+        border: "1px solid transparent",
+        borderRadius: 1.5,
+        backgroundColor: theme.palette.surface.chatInput,
+        width: "100%",
+        transition: "border-color 0.2s ease, box-shadow 0.2s ease",
+        "&:focus-within": {
+          borderColor: theme.palette.primary.main,
+          boxShadow: `0 0 0 2px ${theme.palette.primary.main}22`,
+        },
+      })}
     >
       <TextField
         fullWidth
@@ -63,7 +70,7 @@ export default function ChatInput({
         placeholder={
           streaming
             ? "DocHive is thinking..."
-            : "Ask something about this document..."
+            : `Ask anything about ${filename}...`
         }
         value={value}
         disabled={streaming}

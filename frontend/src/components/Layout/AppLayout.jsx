@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import Navbar from "../Navbar/Navbar";
 import Sidebar from "../Sidebar/Sidebar";
 import Footer from "../Footer/Footer";
 import ChatWindow from "../Chat/ChatWindow";
-import NoDocumentSelected from "../Chat/NoDocumentSelected";
 
 import "./AppLayout.css";
 
@@ -12,8 +11,62 @@ export default function AppLayout({
   mode,
   onToggleTheme,
 }) {
-  const [selectedDocument, setSelectedDocument] =
-    useState(null);
+  const [allDocumentsSelected, setAllDocumentsSelected] =
+    useState(false);
+
+  const [selectedDocumentIds, setSelectedDocumentIds] =
+    useState([]);
+
+  const [documents, setDocuments] = useState([]);
+
+  /*
+   * Sidebar owns document fetching, but AppLayout
+   * needs the document objects for the ChatHeader.
+   */
+  const handleDocumentsChange = useCallback(
+    (nextDocuments) => {
+      setDocuments(nextDocuments);
+    },
+    []
+  );
+
+  /*
+   * Context selection comes from Sidebar.
+   *
+   * documentIds = [] when All Documents is selected.
+   */
+  const handleContextChange = useCallback(
+    ({
+      allDocumentsSelected,
+      documentIds,
+    }) => {
+      setAllDocumentsSelected(
+        allDocumentsSelected
+      );
+
+      setSelectedDocumentIds(documentIds);
+    },
+    []
+  );
+
+  /*
+   * Documents currently included in chat context.
+   */
+  const selectedDocuments = allDocumentsSelected
+    ? documents
+    : documents.filter((document) =>
+        selectedDocumentIds.includes(document.id)
+      );
+
+  /*
+   * Backend representation:
+   *
+   * All Documents -> []
+   * Selected docs -> ["id1", "id2"]
+   */
+  const documentIds = allDocumentsSelected
+    ? []
+    : selectedDocumentIds;
 
   return (
     <div className="app-layout">
@@ -24,18 +77,30 @@ export default function AppLayout({
 
       <div className="app-content">
         <Sidebar
-          selectedDocument={selectedDocument}
-          onSelectDocument={setSelectedDocument}
+          allDocumentsSelected={
+            allDocumentsSelected
+          }
+          selectedDocumentIds={
+            selectedDocumentIds
+          }
+          onContextChange={
+            handleContextChange
+          }
+          onDocumentsChange={
+            handleDocumentsChange
+          }
         />
 
         <main className="main-area">
-          {selectedDocument ? (
-            <ChatWindow
-              document={selectedDocument}
-            />
-          ) : (
-            <NoDocumentSelected />
-          )}
+          <ChatWindow
+            documentIds={documentIds}
+            selectedDocuments={
+              selectedDocuments
+            }
+            allDocumentsSelected={
+              allDocumentsSelected
+            }
+          />
         </main>
       </div>
 

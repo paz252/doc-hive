@@ -1,78 +1,151 @@
-import {
-  Alert,
-  Box,
-} from "@mui/material";
+import { Box } from "@mui/material";
 
 import ChatHeader from "./ChatHeader";
-import ChatEmptyState from "./ChatEmptyState";
 import MessageList from "./MessageList";
 import ChatInput from "./ChatInput";
+import ChatEmptyState from "./ChatEmptyState";
 
 import useChat from "../../hooks/useChat";
 
 export default function ChatWindow({
-  document,
+  documentIds,
+  selectedDocuments,
+  allDocumentsSelected,
 }) {
   const {
     messages,
-    streaming,
+    isLoading,
     error,
     sendMessage,
-    stopStreaming,
-    clearMessages,
-  } = useChat(document.id);
+    clearChat,
+    stopGeneration,
+  } = useChat(documentIds);
+
+  const handleSend = async (message) => {
+    const query = message?.trim();
+
+    if (!query || isLoading) {
+      return;
+    }
+
+    await sendMessage(query);
+  };
+
+  const handleSuggestion = (prompt) => {
+    handleSend(prompt);
+  };
 
   return (
     <Box
-      sx={{
-        flex: 1,
+      sx={(theme) => ({
+        height: "100%",
+        width: "100%",
         minWidth: 0,
         minHeight: 0,
         display: "flex",
         flexDirection: "column",
-      }}
+        overflow: "hidden",
+        backgroundColor: theme.palette.surface.chatWindow,
+      })}
     >
-      <ChatHeader
-        document={document}
-        hasMessages={messages.length > 0}
-        onClearChat={clearMessages}
-      />
+      <Box sx={{ flexShrink: 0 }}>
+        <ChatHeader
+          allDocumentsSelected={
+            allDocumentsSelected
+          }
+          selectedDocuments={selectedDocuments}
+          hasMessages={messages.length > 0}
+          onClearChat={clearChat}
+        />
+      </Box>
 
-      {messages.length === 0 ? (
-        <ChatEmptyState document={document} />
-      ) : (
-        <MessageList messages={messages} />
-      )}
-
-      {error && (
-        <Alert
-          severity="error"
-          sx={{
-            mx: 3,
-            mb: 1,
-          }}
-        >
-          {error}
-        </Alert>
-      )}
-
+      {/* Chat content */}
       <Box
-        sx={{
+        sx={(theme) => ({
+          flex: 1,
+          minHeight: 0,
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          overflowY: "auto",
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            theme.palette.mode === "dark"
+              ? `${theme.palette.grey[800]} transparent`
+              : `${theme.palette.grey[400]} transparent`,
+          "&::-webkit-scrollbar": {
+            width: 6,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? theme.palette.grey[600]
+                : theme.palette.grey[500],
+            borderRadius: 999,
+          },
+        })}
+      >
+        {messages.length === 0 ? (
+          <ChatEmptyState
+            onPrompt={handleSuggestion}
+          />
+        ) : (
+          <MessageList
+            messages={messages}
+            isLoading={isLoading}
+          />
+        )}
+
+        {error && (
+          <Box
+            sx={{
+              flexShrink: 0,
+              px: 3,
+              pb: 1,
+              color: "error.main",
+              fontSize: "0.85rem",
+            }}
+          >
+            {error}
+          </Box>
+        )}
+      </Box>
+
+      {/* Prompt input */}
+      <Box
+        sx={(theme) => ({
+          flexShrink: 0,
           px: 3,
-          pb: 2,
-          pt: 1,
-        }}
+          py: 2,
+          border: "none",
+          backgroundColor: theme.palette.surface.chatInputBox,
+          display: "flex",
+          justifyContent: "center",
+        })}
       >
         <Box
-          sx={{
-            maxWidth: 900,
-            mx: "auto",
-          }}
+          sx={(theme) => ({
+            width: "100%",
+            maxWidth: 760,
+            backgroundColor: theme.palette.surface.chatInput,
+            borderRadius: 1.5,
+            p: 0.25,
+          })}
         >
           <ChatInput
-            streaming={streaming}
-            onSend={sendMessage}
-            onStop={stopStreaming}
+            streaming={isLoading}
+            onSend={handleSend}
+            onStop={stopGeneration}
+            filename={
+              allDocumentsSelected
+                ? "all documents"
+                : selectedDocuments.length > 0
+                  ? selectedDocuments[0]?.fileName || "this document"
+                  : "this document"
+            }
           />
         </Box>
       </Box>

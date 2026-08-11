@@ -9,8 +9,9 @@ import DocumentItem from "./DocumentItem";
 export default function DocumentList({
   documents,
   loading,
-  selectedDocument,
+  selectedDocumentIds,
   onSelect,
+  onInfo,
   onDelete,
 }) {
   if (loading) {
@@ -44,10 +45,11 @@ export default function DocumentList({
         <DocumentItem
           key={document.id}
           document={document}
-          selected={
-            selectedDocument?.id === document.id
-          }
+          selected={selectedDocumentIds.has(
+            document.id
+          )}
           onSelect={onSelect}
+          onInfo={onInfo}
           onDelete={onDelete}
         />
       ))}

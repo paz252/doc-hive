@@ -9,14 +9,29 @@ import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 
 export default function DocumentCount({
   count,
+  allDocumentsSelected,
+  selectedCount,
+  onClick,
 }) {
   return (
     <Paper
       variant="outlined"
-      sx={{
-        p: 1.5,
-        backgroundColor: "action.hover",
-      }}
+      onClick={onClick}
+      sx={(theme) => ({
+        p: 1.25,
+        cursor: "pointer",
+        border: "none",
+        backgroundColor: allDocumentsSelected
+          ? theme.palette.surface.documentItemSelected
+          : theme.palette.surface.documentItem,
+        transition:
+          "background-color 0.2s ease",
+        "&:hover": {
+          backgroundColor: allDocumentsSelected
+            ? theme.palette.surface.documentItemSelected
+            : theme.palette.action.hover,
+        },
+      })}
     >
       <Stack
         direction="row"
@@ -33,6 +48,7 @@ export default function DocumentCount({
             justifyContent: "center",
             backgroundColor: "primary.main",
             color: "primary.contrastText",
+            flexShrink: 0,
           }}
         >
           <DescriptionOutlinedIcon fontSize="small" />
@@ -51,9 +67,9 @@ export default function DocumentCount({
             variant="caption"
             color="text.secondary"
           >
-            {count === 1
-              ? "Document"
-              : "Documents"}
+            {allDocumentsSelected
+              ? "All Documents"
+              : `${selectedCount} selected`}
           </Typography>
         </Box>
       </Stack>
