@@ -63,7 +63,7 @@ export default function DocumentItem({
             minWidth: 0,
             display: "flex",
             flexDirection: "column",
-            gap: 0.5,
+            gap: 0,
           }}
         >
           <Typography
@@ -132,7 +132,7 @@ export default function DocumentItem({
                     },
                   }}
                 >
-                  <InfoIcon sx={{ fontSize: 14 }} />
+                  <InfoIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
 
@@ -159,7 +159,7 @@ export default function DocumentItem({
                     },
                   }}
                 >
-                  <DeleteIcon sx={{ fontSize: 14 }} />
+                  <DeleteIcon sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
             </Stack>

@@ -13,11 +13,16 @@ export default function DocumentSearch({
     <TextField
       fullWidth
       size="small"
-      placeholder="Search documents"
+      placeholder="Filter files"
       value={value}
       onChange={(event) =>
         onChange(event.target.value)
       }
+      sx={(theme) => ({
+        "& .MuiOutlinedInput-root": {
+          backgroundColor: theme.palette.surface.chatWindow,
+        }
+      })}
       slotProps={{
         input: {
           startAdornment: (

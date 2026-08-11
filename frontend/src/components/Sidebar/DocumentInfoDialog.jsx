@@ -1,6 +1,5 @@
 import {
   Box,
-  Chip,
   CircularProgress,
   Dialog,
   DialogContent,
@@ -37,12 +36,19 @@ export default function DocumentInfoDialog({
       onClose={onClose}
       fullWidth
       maxWidth="md"
+      slotProps={{
+        backdrop: {
+          sx: {
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+          },
+        },
+      }}
     >
       <DialogTitle
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 1,
+          gap: 0,
         }}
       >
         <DescriptionIcon color="primary" />
@@ -58,7 +64,7 @@ export default function DocumentInfoDialog({
 
           <Typography
             variant="caption"
-            color="text.secondary"
+            sx={(theme) => ({ color: theme.palette.text.secondary })}
           >
             Document details
           </Typography>
@@ -74,79 +80,58 @@ export default function DocumentInfoDialog({
       <DialogContent>
         <Stack spacing={3}>
           <Stack
-            direction="row"
-            spacing={1}
-            flexWrap="wrap"
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1.5}
             useFlexGap
           >
-            <Chip
-              label={`${document?.totalChunks} chunks`}
-            />
-
-            <Chip
-              label={formatFileSize(
-                document?.fileSize
-              )}
-            />
-
-            <Chip
-              label={document?.contentType}
-              variant="outlined"
-            />
-
-            <Chip
-              label={`Uploaded ${formatDate(
-                document?.uploadedAt
-              )}`}
-              variant="outlined"
-            />
+            {[
+              {
+                label: "Filetype",
+                value: document?.contentType || "Unknown",
+              },
+              {
+                label: "Size",
+                value: formatFileSize(document?.fileSize),
+              },
+              {
+                label: "Total chunks",
+                value: document?.totalChunks ?? 0,
+              },
+              {
+                label: "Uploaded at",
+                value: formatDate(document?.uploadedAt),
+              },
+            ].map((item) => (
+              <Box
+                key={item.label}
+                sx={(theme) => ({
+                  flex: 1,
+                  p: 1.5,
+                  borderRadius: 1,
+                  border: `1px solid ${theme.palette.divider}`,
+                  backgroundColor:
+                    theme.palette.mode === "dark"
+                      ? "rgba(255,255,255,0.04)"
+                      : "rgba(0,0,0,0.025)",
+                })}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={(theme) => ({
+                    display: "block",
+                    mb: 0.5,
+                    color: theme.palette.text.secondary,
+                  })}
+                >
+                  {item.label}
+                </Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {item.value}
+                </Typography>
+              </Box>
+            ))}
           </Stack>
-
-          <Box>
-            <Typography
-              variant="subtitle1"
-              fontWeight={600}
-              sx={{ mb: 1 }}
-            >
-              Metadata
-            </Typography>
-
-            <Stack spacing={0.75}>
-              <Typography variant="body2">
-                <strong>Filename:</strong>{" "}
-                {document?.fileName}
-              </Typography>
-
-              <Typography variant="body2">
-                <strong>Content type:</strong>{" "}
-                {document?.contentType}
-              </Typography>
-
-              <Typography variant="body2">
-                <strong>File size:</strong>{" "}
-                {formatFileSize(
-                  document?.fileSize
-                )}
-              </Typography>
-
-              <Typography variant="body2">
-                <strong>Total chunks:</strong>{" "}
-                {document?.totalChunks}
-              </Typography>
-
-              <Typography variant="body2">
-                <strong>Uploaded:</strong>{" "}
-                {formatDate(
-                  document?.uploadedAt
-                )}
-              </Typography>
-
-              <Typography variant="body2">
-                <strong>ID:</strong>{" "}
-                {document?.id}
-              </Typography>
-            </Stack>
-          </Box>
 
           <Divider />
 
@@ -154,7 +139,10 @@ export default function DocumentInfoDialog({
             <Typography
               variant="subtitle1"
               fontWeight={600}
-              sx={{ mb: 1.5 }}
+              sx={(theme) => ({ 
+                mb: 1.5, 
+                color: theme.palette.text.white, 
+              })}
             >
               Text chunks
             </Typography>
@@ -202,7 +190,7 @@ export default function DocumentInfoDialog({
                         p: 1.5,
                         border: 1,
                         borderColor: "divider",
-                        borderRadius: 2,
+                        borderRadius: 1,
                       }}
                     >
                       <Typography

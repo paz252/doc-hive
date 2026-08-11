@@ -3,8 +3,11 @@ import {
   Alert,
   Box,
   Paper,
+  Stack,
   Typography,
 } from "@mui/material";
+
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 
 import DocumentUpload from "./DocumentUpload";
 import DocumentCount from "./DocumentCount";
@@ -99,9 +102,7 @@ export default function Sidebar({
 
   /*
    * Select All Documents.
-   *
    * Backend contract:
-   *
    * documentIds = []
    */
   const handleSelectAll = () => {
@@ -113,7 +114,6 @@ export default function Sidebar({
 
   /*
    * Select a single document.
-   *
    * Clicking any document (regardless of the
    * current context) puts just that document
    * in context.
@@ -127,7 +127,6 @@ export default function Sidebar({
 
   /*
    * Upload a document.
-   *
    * useDocuments() refreshes the document list
    * after successful upload.
    */
@@ -210,14 +209,51 @@ export default function Sidebar({
         })}
       >
         {/* Header + upload */}
-        <Box sx={{ p: 2 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
+        <Box sx={{ p: 2, pb: 1.25 }}>
+          <Stack
+            direction="row"
+            spacing={1.25}
+            alignItems="flex-start"
             sx={{ mb: 1.5 }}
           >
-            Documents
-          </Typography>
+            <Box
+              sx={(theme) => ({
+                width: 34,
+                height: 34,
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "primary.main",
+                backgroundColor: `${theme.palette.primary.main}14`,
+                boxShadow: `0 0 12px ${theme.palette.primary.main}40`,
+                flexShrink: 0,
+                mt: 0.15,
+              })}
+            >
+              <LibraryBooksIcon fontSize="small" />
+            </Box>
+
+            <Box>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                lineHeight={1}
+              >
+                Knowledge Base
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={(theme) => ({
+                  display: "block",
+                  lineHeight: 1,
+                  color: theme.palette.text.secondary,
+                })}
+              >
+                Indexed vector documents
+              </Typography>
+            </Box>
+          </Stack>
 
           <DocumentUpload
             uploading={uploading}
@@ -225,7 +261,7 @@ export default function Sidebar({
           />
 
           {/* Document count tile */}
-          <Box sx={{ mt: 1.5 }}>
+          <Box sx={{ mt: 1.25 }}>
             <DocumentCount
               count={documents.length}
               selectedCount={
@@ -242,11 +278,42 @@ export default function Sidebar({
         </Box>
 
         {/* Search */}
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ px: 2, py: 1.25 }}>
           <DocumentSearch
             value={search}
             onChange={setSearch}
           />
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginRight: 1.5,
+            px: 2.5,
+            py: 0.75,
+          }}
+        >
+          <Typography
+            variant="caption"
+            sx={(theme) => ({
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+            })}
+          >
+            Documents ({documents.length})
+          </Typography>
+
+          <Typography
+            variant="caption"
+            sx={(theme) => ({
+              color: theme.palette.text.secondary,
+              fontWeight: 600,
+            })}
+          >
+            Status
+          </Typography>
         </Box>
 
         {/* Document list */}
@@ -256,6 +323,7 @@ export default function Sidebar({
             minHeight: 0,
             overflowY: "auto",
             p: 1.5,
+            pt: 0,
             scrollbarWidth: "thin",
             scrollbarColor:
               theme.palette.mode === "dark"

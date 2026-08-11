@@ -54,7 +54,7 @@ export default function ChatInput({
         p: 0.75,
         border: "1px solid transparent",
         borderRadius: 1.5,
-        backgroundColor: theme.palette.surface.chatInput,
+        backgroundColor: theme.palette.surface.chatWindow,
         width: "100%",
         transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         "&:focus-within": {
