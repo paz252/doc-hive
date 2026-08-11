@@ -43,7 +43,7 @@ public class PortfolioRagStrategy implements RagStrategy {
     }
 
     @Override
-    public List<Document> retrieveContext(String query, String targetId) {
+    public List<Document> retrieveContext(String query, List<String> documentIds) {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
                 .topK(5)

@@ -30,7 +30,7 @@ public class ChatController {
     public SseEmitter streamChat(@Valid @RequestBody ChatRequest request) {
         return ragService.streamResponse(
                 request.getEngine() != null ? request.getEngine() : "PORTFOLIO",
-                request.getDocumentId(),
+                request.getDocumentIds(),
                 request.getQuery());
     }
 }

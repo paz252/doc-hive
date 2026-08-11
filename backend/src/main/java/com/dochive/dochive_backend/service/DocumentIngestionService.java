@@ -1,12 +1,14 @@
 package com.dochive.dochive_backend.service;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.core.io.InputStreamResource;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dochive.dochive_backend.dto.DocumentChunkResponse;
 import com.dochive.dochive_backend.entity.DocumentMetaData;
 import com.dochive.dochive_backend.repository.DocumentRepository;
 
@@ -79,7 +82,8 @@ public class DocumentIngestionService {
                         .build())
                 .toList();
 
-        // Vector Store Insertion (Only call vectorStore if readable chunks were extracted)
+        // Vector Store Insertion (Only call vectorStore if readable chunks were
+        // extracted)
         if (!enrichedChunks.isEmpty()) {
             vectorStore.accept(enrichedChunks);
             System.out.printf("Successfully embedded and stored {} chunks for file: {}", enrichedChunks.size(),
@@ -100,6 +104,34 @@ public class DocumentIngestionService {
     public DocumentMetaData getDocumentById(String id) {
         return documentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
+    }
+
+    // Retrieves raw text chunks using Spring AI's VectorStore & FilterExpressionBuilder
+    public List<DocumentChunkResponse> getDocumentChunks(String documentId) {
+        // Verify document existence
+        DocumentMetaData metadata = getDocumentById(documentId);
+
+        if (metadata.getTotalChunks() == 0) {
+            return Collections.emptyList();
+        }
+
+        // Build Spring AI filter expression targeting metadata.documentId = documentId
+        FilterExpressionBuilder builder = new FilterExpressionBuilder();
+        SearchRequest searchRequest = SearchRequest.builder()
+                .query("*")
+                .topK(100) // Retrieve up to 100 chunks for this document
+                .filterExpression(builder.eq("documentId", documentId).build())
+                .build();
+
+        List<Document> matchedDocuments = vectorStore.similaritySearch(searchRequest);
+
+        return matchedDocuments.stream()
+                .map(doc -> DocumentChunkResponse.builder()
+                        .id(doc.getId())
+                        .content(doc.getText())
+                        .metadata(doc.getMetadata())
+                        .build())
+                .toList();
     }
 
     @Transactional

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.dochive.dochive_backend.dto.DocumentChunkResponse;
 import com.dochive.dochive_backend.entity.DocumentMetaData;
 import com.dochive.dochive_backend.service.DocumentIngestionService;
 
@@ -34,7 +35,8 @@ public class DocumentController {
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Ingest document (PDF, DOCX, TXT, MD) into Vector Store")
-    public ResponseEntity<DocumentMetaData> uploadDocument(@RequestParam("file") MultipartFile file) throws IOException {
+    public ResponseEntity<DocumentMetaData> uploadDocument(@RequestParam("file") MultipartFile file)
+            throws IOException {
         DocumentMetaData metadata = ingestionService.ingestDocument(file);
         return ResponseEntity.status(HttpStatus.CREATED).body(metadata);
     }
@@ -49,6 +51,12 @@ public class DocumentController {
     @Operation(summary = "Get metadata of specific document")
     public ResponseEntity<DocumentMetaData> getDocumentById(@PathVariable String id) {
         return ResponseEntity.ok(ingestionService.getDocumentById(id));
+    }
+
+    @GetMapping("/{id}/chunks")
+    @Operation(summary = "Get all raw text chunks and metadata stored in vector store for a specific document")
+    public ResponseEntity<List<DocumentChunkResponse>> getDocumentChunks(@PathVariable String id) {
+        return ResponseEntity.ok(ingestionService.getDocumentChunks(id));
     }
 
     @DeleteMapping("/{id}")

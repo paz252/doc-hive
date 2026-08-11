@@ -40,22 +40,34 @@ public class DocHiveRagStrategy implements RagStrategy {
     }
 
     @Override
-    public List<Document> retrieveContext(String query, String targetId) {
+    public List<Document> retrieveContext(String query, List<String> documentIds) {
 
-        // If documentId is missing or empty, fail fast with empty context
-        if (targetId == null || targetId.isBlank()) {
-            return Collections.emptyList();
-        }
-
-        FilterExpressionBuilder b = new FilterExpressionBuilder();
-        SearchRequest searchRequest = SearchRequest.builder()
+        SearchRequest.Builder searchRequestBuilder = SearchRequest.builder()
                 .query(query)
-                .topK(5)
-                .similarityThreshold(0.3)
-                .filterExpression(b.eq("documentId", targetId).build())
-                .build();
+                .topK(8) // Increased topK to accommodate chunks across multiple files
+                .similarityThreshold(0.5);
 
-        List<Document> result = vectorStore.similaritySearch(searchRequest);
+        // Dynamic Filtering Logic
+        if (documentIds != null && !documentIds.isEmpty()) {
+            List<String> validIds = documentIds.stream()
+                    .filter(id -> id != null && !id.isBlank())
+                    .toList();
+
+            if (!validIds.isEmpty()) {
+                FilterExpressionBuilder b = new FilterExpressionBuilder();
+                if (validIds.size() == 1) {
+                    // Filter by 1 single document ID
+                    searchRequestBuilder.filterExpression(b.eq("documentId", validIds.get(0)).build());
+                } else {
+                    // Filter by multiple document IDs
+                    searchRequestBuilder.filterExpression(b.in("documentId", validIds.toArray()).build());
+                }
+            }
+        }
+        // If documentIds is empty or null, no filter is applied -> Searches across ALL
+        // uploaded documents in pgvector!
+
+        List<Document> result = vectorStore.similaritySearch(searchRequestBuilder.build());
         return result != null ? result : Collections.emptyList();
     }
 

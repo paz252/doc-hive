@@ -28,7 +28,7 @@ public class PolymorphicRagService {
                 .collect(Collectors.toMap(RagStrategy::getStrategyType, Function.identity()));
     }
 
-    public SseEmitter streamResponse(String engineType, String targetId, String query) {
+    public SseEmitter streamResponse(String engineType, List<String> documentIds, String query) {
         SseEmitter emitter = new SseEmitter(180_000L); // 3-minute timeout
 
         executor.execute(() -> {
@@ -39,7 +39,7 @@ public class PolymorphicRagService {
                 }
 
                 // Retrieve context polymorphically
-                List<Document> contexts = strategy.retrieveContext(query, targetId);
+                List<Document> contexts = strategy.retrieveContext(query, documentIds);
                 final String contextText = extractContextText(contexts);
 
                 ChatClient chatClient = chatClientBuilder.build();

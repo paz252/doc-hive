@@ -14,7 +14,7 @@ public interface RagStrategy {
     String getStrategyType();
 
     // Retrieves context documents matching the user query
-    List<Document> retrieveContext(String query, String targetId);
+    List<Document> retrieveContext(String query, List<String> documentIds);
 
     // System prompt specific to the assistant persona and guardrails
     String getSystemPrompt();
