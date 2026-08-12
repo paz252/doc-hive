@@ -68,7 +68,7 @@ export default function ChatEmptyState({
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: 4,
+          gap: 6,
         }}
       >
         {/* Header */}
@@ -92,16 +92,18 @@ export default function ChatEmptyState({
               backgroundColor: "primary.main",
               color: "primary.contrastText",
               borderRadius: 1,
+              mb: 2
             }}
           >
             <MenuBookOutlinedIcon sx={{ fontSize: 30 }} />
           </Box>
 
-          <Typography
-            variant="h5"
-            sx={{ lineHeight: 1.2 }}
-          >
-            DocHive AI Document Assistant
+          <Typography variant="h5" sx={{ lineHeight: 1.2, letterSpacing: 1.2 }}>
+            Doc
+            <Box component="span" sx={{ color: "primary.main" }}>
+              Hive
+            </Box>
+            {" "}AI Document Assistant
           </Typography>
 
           <Typography
