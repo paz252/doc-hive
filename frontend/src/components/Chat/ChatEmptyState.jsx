@@ -7,44 +7,44 @@ import {
   Typography,
 } from "@mui/material";
 
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import MenuBookOutlinedIcon from "@mui/icons-material/MenuBookOutlined";
 import SummarizeOutlinedIcon from "@mui/icons-material/SummarizeOutlined";
-import KeyOutlinedIcon from "@mui/icons-material/KeyOutlined";
-import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
-import CompareArrowsOutlinedIcon from "@mui/icons-material/CompareArrowsOutlined";
+import QuestionAnswerOutlinedIcon from "@mui/icons-material/QuestionAnswerOutlined";
+import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
+import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
 
 const suggestions = [
   {
     title: "Summarize",
     description:
-      "Summarize the key points from these documents",
+      "Summarize key points from these documents",
     prompt:
       "Summarize the key points from these documents.",
     icon: SummarizeOutlinedIcon,
   },
   {
-    title: "Key Points",
+    title: "Interview / Q&A Insights",
     description:
-      "What are the most important points?",
+      "Extract important questions and their answers.",
     prompt:
-      "What are the most important points from these documents?",
-    icon: KeyOutlinedIcon,
+      "What are the most critical questions and answers covered in this text?",
+    icon: QuestionAnswerOutlinedIcon,
   },
   {
-    title: "Find Information",
+    title: "Ask About the Documents",
     description:
-      "Find important information in the documents",
+      "Answer specific questions from the documents.",
     prompt:
-      "Find the most important information in these documents.",
-    icon: SearchOutlinedIcon,
+      "What are the main topics discussed in these documents?",
+    icon: FindInPageOutlinedIcon,
   },
   {
-    title: "Compare",
+    title: "Technical Concepts",
     description:
-      "Compare the selected documents",
+      "Explain key technial concepts in the document.",
     prompt:
-      "Compare the selected documents and highlight the key differences.",
-    icon: CompareArrowsOutlinedIcon,
+      "Explain main technical concepts and architecture described in the document",
+    icon: AccountTreeOutlinedIcon,
   },
 ];
 
@@ -54,66 +54,74 @@ export default function ChatEmptyState({
   return (
     <Box
       sx={{
-        flex: 1,
-        minHeight: 0,
-        overflowY: "auto",
+        width: "100%",
         display: "flex",
-        alignItems: "center",
         justifyContent: "center",
         px: 3,
         py: 5,
       }}
     >
-      <Stack
-        spacing={4}
+      <Box
         sx={{
           width: "100%",
           maxWidth: 760,
-          textAlign: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 4,
         }}
       >
-        <Stack
-          alignItems="center"
-          spacing={1.5}
+        {/* Header */}
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            textAlign: "center",
+            gap: 1,
+          }}
         >
-          <AutoAwesomeIcon
+          <Box
             sx={{
-              fontSize: 44,
-              color: "primary.main",
-            }}
-          />
-
-          <Typography
-            variant="h3"
-            fontWeight={700}
-          >
-            DOCHIVE
-          </Typography>
-
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            fontWeight={400}
-          >
-            AI Document Assistant
-          </Typography>
-
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{
-              maxWidth: 560,
+              width: 42,
+              height: 42,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
+              borderRadius: 1,
             }}
           >
-            Ask questions, summarize content, find
-            information, and compare your documents
-            using AI-powered retrieval.
-          </Typography>
-        </Stack>
+            <MenuBookOutlinedIcon sx={{ fontSize: 30 }} />
+          </Box>
 
+          <Typography
+            variant="h5"
+            sx={{ lineHeight: 1.2 }}
+          >
+            DocHive AI Document Assistant
+          </Typography>
+
+          <Typography
+            variant="subtitle2"
+            color="text.secondary"
+            sx={(theme) => ({
+              lineHeight: 1.2,
+              maxWidth: 650,
+              color: theme.palette.text.secondary
+            })}
+          >
+            Drop in your PDFs, Word files, or notes and let DocHive
+            find the answers you need.
+          </Typography>
+        </Box>
+
+        {/* Suggestions */}
         <Grid
           container
-          spacing={2}
+          spacing={1}
           justifyContent="center"
         >
           {suggestions.map((suggestion) => {
@@ -169,8 +177,11 @@ export default function ChatEmptyState({
                         </Typography>
 
                         <Typography
-                          variant="body2"
-                          color="text.secondary"
+                          variant="subtitle2"
+                          sx={(theme) => ({
+                            color: theme.palette.text.secondary,
+                            fontSize: 14
+                          })}
                         >
                           {suggestion.description}
                         </Typography>
@@ -182,7 +193,7 @@ export default function ChatEmptyState({
             );
           })}
         </Grid>
-      </Stack>
+      </Box>
     </Box>
   );
 }

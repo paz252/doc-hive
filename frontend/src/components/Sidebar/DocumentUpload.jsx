@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 import {
   Box,
@@ -14,6 +14,15 @@ export default function DocumentUpload({
   onUpload,
 }) {
   const inputRef = useRef(null);
+
+  const [isDragging, setIsDragging] = useState(false);
+
+  /*
+   * Tracks nested dragenter/dragleave events so the
+   * dashed border doesn't flicker as the pointer moves
+   * over child elements (icon, text) inside the drop zone.
+   */
+  const dragCounter = useRef(0);
 
   const handleClick = () => {
     inputRef.current?.click();
@@ -31,6 +40,63 @@ export default function DocumentUpload({
     event.target.value = "";
   };
 
+  const handleDragEnter = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (uploading) {
+      return;
+    }
+
+    dragCounter.current += 1;
+    setIsDragging(true);
+  };
+
+  const handleDragOver = (event) => {
+    /*
+     * Required to allow dropping - browsers reject
+     * drops by default unless dragover is prevented.
+     */
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (uploading) {
+      return;
+    }
+
+    dragCounter.current -= 1;
+
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    dragCounter.current = 0;
+    setIsDragging(false);
+
+    if (uploading) {
+      return;
+    }
+
+    const file = event.dataTransfer.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    await onUpload(file);
+  };
+
   return (
     <>
       <input
@@ -44,13 +110,22 @@ export default function DocumentUpload({
       <Paper
         variant="outlined"
         onClick={handleClick}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         sx={(theme) => ({
           p: 2,
           cursor: uploading ? "default" : "pointer",
           border: `1px dashed ${theme.palette.primary.main}`,
           backgroundColor: uploading
             ? theme.palette.action.disabledBackground
-            : theme.palette.surface.documentItem,
+            : isDragging
+              ? theme.palette.action.hover
+              : theme.palette.surface.documentItem,
+          boxShadow: isDragging
+            ? `0 0 0 2px ${theme.palette.primary.main} inset`
+            : "none",
           transition: "all 0.2s ease",
           display: "flex",
           flexDirection: "column",
@@ -95,7 +170,9 @@ export default function DocumentUpload({
         >
           {uploading
             ? "Uploading..."
-            : "Upload Files or Drag here"}
+            : isDragging
+              ? "Drop to upload"
+              : "Upload Files or Drag here"}
         </Typography>
 
         <Typography

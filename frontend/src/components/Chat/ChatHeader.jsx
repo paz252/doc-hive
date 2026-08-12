@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import {
   Box,
   IconButton,
@@ -6,14 +8,22 @@ import {
   Typography,
 } from "@mui/material";
 
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircle";
 import DeleteSweepOutlinedIcon from "@mui/icons-material/DeleteSweepOutlined";
 
+import DocumentContextDialog from "../Sidebar/DocumentContextDialog";
+
 export default function ChatHeader({
+  documents,
   allDocumentsSelected,
   selectedDocuments,
   hasMessages,
   onClearChat,
+  onContextChange,
 }) {
+  const [contextDialogOpen, setContextDialogOpen] =
+    useState(false);
+
   const contextLabel = allDocumentsSelected
     ? "All Documents"
     : selectedDocuments.length === 0
@@ -21,6 +31,14 @@ export default function ChatHeader({
       : selectedDocuments
           .map((document) => document.fileName)
           .join(", ");
+
+  /*
+   * The dialog works off ids - selectedDocuments only
+   * carries the resolved document objects.
+   */
+  const selectedDocumentIds = selectedDocuments.map(
+    (document) => document.id
+  );
 
   return (
     <Box
@@ -80,28 +98,51 @@ export default function ChatHeader({
           }}
         />
 
-        <Typography
-          variant="caption"
-          noWrap
-          title={contextLabel}
-          sx={(theme) => ({
-            letterSpacing: 0.5,
-            color:
-              theme.palette.mode === "dark"
-                ? theme.palette.text.secondary
-                : theme.palette.text.disabled,
-            ".context-label": {
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 0.75,
+          }}
+        >
+          <Typography
+            variant="caption"
+            noWrap
+            title={contextLabel}
+            sx={(theme) => ({
+              flex: "0 1 auto",
+              minWidth: 0,
+              letterSpacing: 0.5,
               color:
                 theme.palette.mode === "dark"
-                  ? theme.palette.common.white
-                  : theme.palette.text.primary,
-              fontWeight: 700,
-            },
-          })}
-        >
-          <span style={{ color: "inherit" }}>Context:</span>{" "}
-          <span className="context-label">{contextLabel}</span>
-        </Typography>
+                  ? theme.palette.text.secondary
+                  : theme.palette.text.disabled,
+              ".context-label": {
+                color:
+                  theme.palette.mode === "dark"
+                    ? theme.palette.common.white
+                    : theme.palette.text.primary,
+                fontWeight: 700,
+              },
+            })}
+          >
+            <span style={{ color: "inherit" }}>Context:</span>{" "}
+            <span className="context-label">{contextLabel}</span>
+          </Typography>
+
+          <Tooltip title="Add documents to context">
+            <IconButton
+              size="small"
+              onClick={() => setContextDialogOpen(true)}
+              aria-label="Add documents to context"
+              sx={{ flexShrink: 0 }}
+            >
+              <AddCircleOutlineIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Stack>
 
       <Tooltip title="Clear chat">
@@ -123,6 +164,15 @@ export default function ChatHeader({
           </IconButton>
         </span>
       </Tooltip>
+
+      <DocumentContextDialog
+        open={contextDialogOpen}
+        documents={documents}
+        allDocumentsSelected={allDocumentsSelected}
+        selectedDocumentIds={selectedDocumentIds}
+        onClose={() => setContextDialogOpen(false)}
+        onContextChange={onContextChange}
+      />
     </Box>
   );
 }

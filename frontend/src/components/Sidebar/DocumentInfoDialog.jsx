@@ -48,25 +48,39 @@ export default function DocumentInfoDialog({
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: 0,
+          gap: 1,
         }}
       >
         <DescriptionIcon color="primary" />
 
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            lineHeight: 1.2,
+          }}
+        >
           <Typography
             variant="h6"
             noWrap
             title={document?.fileName}
+            sx={{ lineHeight: 1.6 }}
           >
             {document?.fileName}
           </Typography>
 
           <Typography
-            variant="caption"
-            sx={(theme) => ({ color: theme.palette.text.secondary })}
+            variant="subtitle2"
+            sx={(theme) => ({
+              color: theme.palette.text.secondary,
+              lineHeight: 1.2,
+              mt: 0,
+            })}
           >
-            Document details
+            Document Details
           </Typography>
         </Box>
 
@@ -77,7 +91,30 @@ export default function DocumentInfoDialog({
 
       <Divider />
 
-      <DialogContent>
+      <DialogContent
+        sx={(theme) => ({
+          maxHeight: "70vh",
+          overflowY: "auto",
+          scrollbarWidth: "thin",
+          scrollbarColor:
+            theme.palette.mode === "dark"
+              ? `${theme.palette.grey[800]} transparent`
+              : `${theme.palette.grey[400]} transparent`,
+          "&::-webkit-scrollbar": {
+            width: 6,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor:
+              theme.palette.mode === "dark"
+                ? theme.palette.grey[600]
+                : theme.palette.grey[500],
+            borderRadius: 999,
+          },
+        })}
+      >
         <Stack spacing={3}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
@@ -86,7 +123,7 @@ export default function DocumentInfoDialog({
           >
             {[
               {
-                label: "Filetype",
+                label: "Content Type",
                 value: document?.contentType || "Unknown",
               },
               {
@@ -94,11 +131,11 @@ export default function DocumentInfoDialog({
                 value: formatFileSize(document?.fileSize),
               },
               {
-                label: "Total chunks",
+                label: "Total Chunks",
                 value: document?.totalChunks ?? 0,
               },
               {
-                label: "Uploaded at",
+                label: "Uploaded At",
                 value: formatDate(document?.uploadedAt),
               },
             ].map((item) => (
@@ -139,9 +176,10 @@ export default function DocumentInfoDialog({
             <Typography
               variant="subtitle1"
               fontWeight={600}
-              sx={(theme) => ({ 
-                mb: 1.5, 
-                color: theme.palette.text.white, 
+              sx={(theme) => ({
+                mb: 0.5,
+                ml: 0.5,
+                color: theme.palette.text.white,
               })}
             >
               Text chunks
@@ -195,11 +233,13 @@ export default function DocumentInfoDialog({
                     >
                       <Typography
                         variant="caption"
-                        color="text.secondary"
                         display="block"
-                        sx={{ mb: 0.75 }}
+                        sx={(theme) => ({
+                          mb: 0.75,
+                          color: theme.palette.text.secondary
+                        })}
                       >
-                        Chunk {index + 1}
+                        Chunk #{index + 1}
                       </Typography>
 
                       <Typography

@@ -37,6 +37,7 @@ export default function useChat(documentIds = []) {
         id: crypto.randomUUID(),
         role: "user",
         content: trimmedQuery,
+        timestamp: Date.now(),
       };
 
       const assistantMessageId = crypto.randomUUID();
@@ -45,6 +46,7 @@ export default function useChat(documentIds = []) {
         id: assistantMessageId,
         role: "assistant",
         content: "",
+        timestamp: Date.now(),
       };
 
       setMessages((previous) => [

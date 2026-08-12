@@ -31,7 +31,8 @@ export default function AppLayout({
   );
 
   /*
-   * Context selection comes from Sidebar.
+   * Context selection comes from Sidebar or from
+   * ChatHeader's document context dialog.
    *
    * documentIds = [] when All Documents is selected.
    */
@@ -94,11 +95,15 @@ export default function AppLayout({
         <main className="main-area">
           <ChatWindow
             documentIds={documentIds}
+            documents={documents}
             selectedDocuments={
               selectedDocuments
             }
             allDocumentsSelected={
               allDocumentsSelected
+            }
+            onContextChange={
+              handleContextChange
             }
           />
         </main>

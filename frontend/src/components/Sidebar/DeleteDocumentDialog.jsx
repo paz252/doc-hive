@@ -18,6 +18,13 @@ export default function DeleteDocumentDialog({
     <Dialog
       open={open}
       onClose={deleting ? undefined : onClose}
+      slotProps={{
+        backdrop: {
+          sx: {
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+          },
+        },
+      }}
     >
       <DialogTitle>
         Delete document?

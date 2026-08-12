@@ -9,8 +9,10 @@ import useChat from "../../hooks/useChat";
 
 export default function ChatWindow({
   documentIds,
+  documents,
   selectedDocuments,
   allDocumentsSelected,
+  onContextChange,
 }) {
   const {
     messages,
@@ -37,7 +39,7 @@ export default function ChatWindow({
 
   return (
     <Box
-      sx={(theme) => ({
+      sx={{
         height: "100%",
         width: "100%",
         minWidth: 0,
@@ -45,17 +47,19 @@ export default function ChatWindow({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        backgroundColor: theme.palette.surface.chatWindow,
-      })}
+        backgroundColor: "background.default",
+      }}
     >
       <Box sx={{ flexShrink: 0 }}>
         <ChatHeader
+          documents={documents}
           allDocumentsSelected={
             allDocumentsSelected
           }
           selectedDocuments={selectedDocuments}
           hasMessages={messages.length > 0}
           onClearChat={clearChat}
+          onContextChange={onContextChange}
         />
       </Box>
 
@@ -67,18 +71,23 @@ export default function ChatWindow({
           position: "relative",
           display: "flex",
           flexDirection: "column",
+          backgroundColor: theme.palette.surface.chatWindow,
           overflowY: "auto",
+
           scrollbarWidth: "thin",
           scrollbarColor:
             theme.palette.mode === "dark"
               ? `${theme.palette.grey[800]} transparent`
               : `${theme.palette.grey[400]} transparent`,
+
           "&::-webkit-scrollbar": {
             width: 6,
           },
+
           "&::-webkit-scrollbar-track": {
             background: "transparent",
           },
+
           "&::-webkit-scrollbar-thumb": {
             backgroundColor:
               theme.palette.mode === "dark"
@@ -88,66 +97,56 @@ export default function ChatWindow({
           },
         })}
       >
-        {messages.length === 0 ? (
-          <ChatEmptyState
-            onPrompt={handleSuggestion}
-          />
-        ) : (
-          <MessageList
-            messages={messages}
-            isLoading={isLoading}
-          />
-        )}
+        <Box
+          sx={{
+            width: "75%",
+            mx: "auto",
+            minHeight: "100%",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {messages.length === 0 ? (
+            <ChatEmptyState
+              onPrompt={handleSuggestion}
+            />
+          ) : (
+            <MessageList
+              messages={messages}
+              isLoading={isLoading}
+            />
+          )}
 
-        {error && (
-          <Box
-            sx={{
-              flexShrink: 0,
-              px: 3,
-              pb: 1,
-              color: "error.main",
-              fontSize: "0.85rem",
-            }}
-          >
-            {error}
-          </Box>
-        )}
+          {error && (
+            <Box
+              sx={{
+                flexShrink: 0,
+                pb: 1,
+                color: "error.main",
+                fontSize: "0.85rem",
+              }}
+            >
+              {error}
+            </Box>
+          )}
+        </Box>
       </Box>
 
       {/* Prompt input */}
       <Box
-        sx={(theme) => ({
+        sx={{
           flexShrink: 0,
           px: 3,
           py: 2,
-          border: "none",
-          backgroundColor: theme.palette.surface.chatInputBox,
-          display: "flex",
-          justifyContent: "center",
-        })}
+          borderTop: 1,
+          borderColor: "divider",
+        }}
       >
-        <Box
-          sx={(theme) => ({
-            width: "100%",
-            maxWidth: 760,
-            backgroundColor: theme.palette.surface.chatInput,
-            borderRadius: 1.5,
-            p: 0.25,
-          })}
-        >
-          <ChatInput
-            streaming={isLoading}
-            onSend={handleSend}
-            onStop={stopGeneration}
-            filename={
-              allDocumentsSelected
-                ? "all documents"
-                : selectedDocuments.length > 0
-                  ? selectedDocuments[0]?.fileName || "this document"
-                  : "this document"
-            }
-          />
-        </Box>
+        <ChatInput
+          streaming={isLoading}
+          onSend={handleSend}
+          onStop={stopGeneration}
+        />
       </Box>
     </Box>
   );

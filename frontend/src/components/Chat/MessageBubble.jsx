@@ -1,19 +1,45 @@
+import { useState } from "react";
+
 import {
   Avatar,
   Box,
+  IconButton,
   Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
-import PersonIcon from "@mui/icons-material/Person";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
 import "./Chat.css";
 
 export default function MessageBubble({
   message,
 }) {
   const isUser = message.role === "user";
+  const [copied, setCopied] = useState(false);
+
+  const formattedTime = new Date(
+    message.timestamp || Date.now()
+  ).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  const handleCopy = async () => {
+    if (!message.content) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(message.content);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch (error) {
+      console.error("Failed to copy message:", error);
+    }
+  };
 
   return (
     <Box
@@ -30,67 +56,160 @@ export default function MessageBubble({
         spacing={1.5}
         sx={{
           maxWidth: "75%",
+          alignItems: "flex-start",
+          ":hover .message-meta": {
+            opacity: 1,
+            transform: "translateY(0)",
+          },
         }}
       >
-        {!isUser && (
-          <Avatar
-            sx={{
-              width: 26,
-              height: 26,
-              bgcolor: "primary.main",
-              flexShrink: 0,
-            }}
-          >
-            <AutoAwesomeIcon fontSize="small" />
-          </Avatar>
-        )}
 
-        <Paper
-          elevation={0}
+        <Box
           sx={{
-            px: 2,
-            py: 1.25,
-            border: 1,
-            borderColor: isUser
-              ? "primary.main"
-              : "divider",
-            backgroundColor: isUser
-              ? "primary.main"
-              : "background.paper",
-            color: isUser
-              ? "primary.contrastText"
-              : "text.primary",
-            borderRadius: 1.5,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: isUser ? "flex-end" : "flex-start",
           }}
         >
-          <Typography
-            variant="body1"
+          <Paper
+            elevation={0}
             sx={{
-              whiteSpace: "pre-wrap",
-              overflowWrap: "anywhere",
+              px: 2,
+              py: 1.25,
+              border: 1,
+              borderColor: isUser
+                ? "primary.main"
+                : "divider",
+              backgroundColor: isUser
+                ? "primary.main"
+                : "background.paper",
+              color: isUser
+                ? "primary.contrastText"
+                : "text.primary",
+              borderRadius: 1,
             }}
           >
-            {message.content}
-            {!isUser &&
-              message.content === "" && (
-                <span className="typing-indicator">
-                  ●●●
-                </span>
-              )}
-          </Typography>
-        </Paper>
+            <Typography
+              variant="body1"
+              sx={{
+                whiteSpace: "pre-wrap",
+                overflowWrap: "anywhere",
+              }}
+            >
+              {message.content}
+              {!isUser &&
+                message.content === "" && (
+                  <span className="typing-indicator">
+                    ●●●
+                  </span>
+                )}
+            </Typography>
+          </Paper>
 
-        {isUser && (
-          <Avatar
+          <Stack
+            className="message-meta"
+            direction="row"
+            spacing={0.5}
+            alignItems="center"
             sx={{
-              width: 26,
-              height: 26,
-              flexShrink: 0,
+              mt: 0.5,
+              opacity: 0,
+              transform: "translateY(4px)",
+              transition: "opacity 0.2s ease, transform 0.2s ease",
+              pointerEvents: "none",
+              "& .MuiIconButton-root, & .MuiTypography-root": {
+                pointerEvents: "auto",
+              },
             }}
           >
-            <PersonIcon fontSize="small" />
-          </Avatar>
-        )}
+            {isUser ? (
+              <>
+                <Typography
+                  variant="caption"
+                  sx={(theme) => ({
+                    color: theme.palette.text.secondary,
+                    fontSize: "0.68rem",
+                    lineHeight: 1.2,
+                  })}
+                >
+                  {formattedTime}
+                </Typography>
+
+                <Tooltip title={copied ? "Copied" : "Copy message"}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      lineHeight: 0,
+                    }}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={handleCopy}
+                      disabled={!message.content}
+                      sx={{
+                        p: 0.2,
+                        color: "text.secondary",
+                        ".MuiSvgIcon-root": {
+                          fontSize: 14,
+                        },
+                      }}
+                    >
+                      {copied ? (
+                        <CheckIcon fontSize="small" />
+                      ) : (
+                        <ContentCopyIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              </>
+            ) : (
+              <>
+                <Tooltip title={copied ? "Copied" : "Copy message"}>
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      lineHeight: 0,
+                    }}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={handleCopy}
+                      disabled={!message.content}
+                      sx={{
+                        p: 0.2,
+                        color: "text.secondary",
+                        ".MuiSvgIcon-root": {
+                          fontSize: 14,
+                        },
+                      }}
+                    >
+                      {copied ? (
+                        <CheckIcon fontSize="small" />
+                      ) : (
+                        <ContentCopyIcon fontSize="small" />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
+
+                <Typography
+                  variant="caption"
+                  sx={(theme) => ({
+                    color: theme.palette.text.secondary,
+                    fontSize: "0.68rem",
+                    lineHeight: 1.2,
+                  })}
+                >
+                  {formattedTime}
+                </Typography>
+              </>
+            )}
+          </Stack>
+        </Box>
+
       </Stack>
     </Box>
   );
