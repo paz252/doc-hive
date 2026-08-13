@@ -47,7 +47,7 @@ public class PortfolioRagStrategy implements RagStrategy {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
                 .topK(5)
-                .similarityThreshold(0.3)
+                .similarityThreshold(0.1)
                 .build();
 
         return simpleVectorStore.similaritySearch(searchRequest);
