@@ -13,10 +13,17 @@ import {
   DarkMode,
   LightMode,
   MenuBookOutlined,
+  MenuOutlined,
   OpenInNew,
   GitHub,
   StorageOutlined,
 } from "@mui/icons-material";
+
+import { useState } from "react";
+
+import {
+  ClickAwayListener,
+} from "@mui/material";
 
 import { endPoints } from "../../api/myResources";
 
@@ -25,11 +32,15 @@ export default function Navbar({
   onToggleTheme,
   stats,
   storageLimitMB = 500, // adjust to your Supabase plan's actual limit
+  showMenuButton = false,
+  onMenuClick,
 }) {
   const usagePercent = Math.min(
     (stats.total_size_mb / storageLimitMB) * 100,
     100
   );
+
+  const [storageTooltipOpen, setStorageTooltipOpen] = useState(false);
 
   return (
     <AppBar
@@ -48,6 +59,18 @@ export default function Navbar({
           minHeight: { xs: 56, sm: 64 },
         }}
       >
+        {/* Sidebar toggle — mobile only */}
+        {showMenuButton && (
+          <IconButton
+            onClick={onMenuClick}
+            aria-label="Open document sidebar"
+            edge="start"
+            sx={{ mr: 0.5, color: "text.secondary", flexShrink: 0 }}
+          >
+            <MenuOutlined />
+          </IconButton>
+        )}
+
         {/* Logo */}
         <Box
           sx={{
@@ -77,7 +100,7 @@ export default function Navbar({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* Storage/usage indicator — collapses to icon-only below sm */}
+        {/* Storage/usage indicator — tap-to-open tooltip on touch, hover on desktop */}
         <Tooltip
           title={`${stats.total_size_mb.toFixed(2)} MB of ${storageLimitMB} MB · ${stats.chunk_count} chunks`}
           enterDelay={0}
@@ -106,10 +129,19 @@ export default function Navbar({
           >
             <StorageOutlined
               className="storage-icon"
-              sx={{ fontSize: 16, color: "text.secondary", transition: "color 0.2s" }}
+              sx={{
+                fontSize: 16,
+                color: "text.secondary",
+                transition: "color 0.2s",
+              }}
             />
-            {/* Text + progress bar hidden below sm — icon + tooltip carries the info */}
-            <Box sx={{ minWidth: 120, display: { xs: "none", sm: "block" } }}>
+
+            <Box
+              sx={{
+                minWidth: 120,
+                display: { xs: "none", sm: "block" },
+              }}
+            >
               <Typography
                 variant="caption"
                 className="storage-text"
@@ -123,8 +155,10 @@ export default function Navbar({
                   whiteSpace: "nowrap",
                 }}
               >
-                {stats.doc_count} docs · {stats.total_size_mb.toFixed(2)}/{storageLimitMB} MB
+                {stats.doc_count} docs · {stats.total_size_mb.toFixed(2)}/
+                {storageLimitMB} MB
               </Typography>
+
               <LinearProgress
                 variant="determinate"
                 value={usagePercent}
@@ -149,7 +183,7 @@ export default function Navbar({
         <Box sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }} />
 
         {/* Portfolio Link — full text button on md+, icon-only below md */}
-        <Tooltip title="View Portfolio">
+        <Tooltip title="Developer's Portfolio">
           <Button
             component="a"
             href={endPoints.portfolio}
@@ -179,8 +213,8 @@ export default function Navbar({
           </Button>
         </Tooltip>
 
-        {/* Portfolio Link */}
-        <Tooltip title="View Portfolio">
+        {/* Portfolio Link — icon only below md */}
+        <Tooltip title="Developer's Portfolio">
           <IconButton
             component="a"
             href={endPoints.portfolio}

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { Drawer, useMediaQuery, useTheme } from "@mui/material";
+
 import Navbar from "../Navbar/Navbar";
 import Sidebar from "../Sidebar/Sidebar";
 import Footer from "../Footer/Footer";
@@ -9,10 +11,20 @@ import { fetchStorageStats } from "../../api/myResources";
 
 import "./AppLayout.css";
 
+const SIDEBAR_WIDTH = 300;
+
 export default function AppLayout({
   mode,
   onToggleTheme,
 }) {
+  const theme = useTheme();
+  // Below `md`, the sidebar becomes an overlay drawer instead of
+  // a permanent flex column — it was eating ~80% of the viewport
+  // as a fixed-width flex sibling with no room left for chat.
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   const [allDocumentsSelected, setAllDocumentsSelected] = useState(false);
 
   const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
@@ -63,8 +75,15 @@ export default function AppLayout({
       );
 
       setSelectedDocumentIds(documentIds);
+
+      // Selecting a document from the drawer on mobile should close
+      // it afterward — otherwise the user has to manually dismiss the
+      // overlay every time before they can see the chat they just set up.
+      if (isMobile) {
+        setMobileSidebarOpen(false);
+      }
     },
-    []
+    [isMobile]
   );
 
   /*
@@ -86,6 +105,15 @@ export default function AppLayout({
     ? []
     : selectedDocumentIds;
 
+  const sidebarContent = (
+    <Sidebar
+      allDocumentsSelected={allDocumentsSelected}
+      selectedDocumentIds={selectedDocumentIds}
+      onContextChange={handleContextChange}
+      onDocumentsChange={handleDocumentsChange}
+    />
+  );
+
   return (
     <div className="app-layout">
       <Navbar
@@ -93,15 +121,42 @@ export default function AppLayout({
         onToggleTheme={onToggleTheme}
         stats={stats}
         storageLimitMB={500}
+        showMenuButton={isMobile}
+        onMenuClick={() => setMobileSidebarOpen(true)}
       />
 
       <div className="app-content">
-        <Sidebar
-          allDocumentsSelected={allDocumentsSelected}
-          selectedDocumentIds={selectedDocumentIds}
-          onContextChange={handleContextChange}
-          onDocumentsChange={handleDocumentsChange}
-        />
+        {isMobile ? (
+          <Drawer
+            variant="temporary"
+            open={mobileSidebarOpen}
+            onClose={() => setMobileSidebarOpen(false)}
+            ModalProps={{ keepMounted: true }} // better perf on reopen
+            sx={{
+              "& .MuiDrawer-paper": {
+                width: "min(85vw, 320px)",
+                boxSizing: "border-box",
+              },
+            }}
+          >
+            {sidebarContent}
+          </Drawer>
+        ) : (
+          <Drawer
+            variant="permanent"
+            sx={{
+              width: SIDEBAR_WIDTH,
+              flexShrink: 0,
+              "& .MuiDrawer-paper": {
+                width: SIDEBAR_WIDTH,
+                boxSizing: "border-box",
+                position: "relative", // stays in normal flex flow, not fixed
+              },
+            }}
+          >
+            {sidebarContent}
+          </Drawer>
+        )}
 
         <main className="main-area">
           <ChatWindow
