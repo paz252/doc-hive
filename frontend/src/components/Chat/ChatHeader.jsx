@@ -29,8 +29,8 @@ export default function ChatHeader({
     : selectedDocuments.length === 0
       ? "No Documents"
       : selectedDocuments
-          .map((document) => document.fileName)
-          .join(", ");
+        .map((document) => document.fileName)
+        .join(", ");
 
   /*
    * The dialog works off ids - selectedDocuments only
@@ -157,9 +157,16 @@ export default function ChatHeader({
               px: 1,
               borderRadius: 1,
               color: "text.secondary",
+              "&:hover": {
+                color: "error.main",
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "rgba(244, 67, 54, 0.08)"
+                    : "rgba(244, 67, 54, 0.04)",
+              },
             }}
           >
-            <DeleteSweepOutlinedIcon sx={{ fontSize: 16, mr: 0.5 }} />
+            <DeleteSweepOutlinedIcon sx={{ fontSize: 16 }} />
             <span>Clear</span>
           </IconButton>
         </span>

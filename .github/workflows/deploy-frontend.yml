@@ -1,0 +1,57 @@
+name: Deploy DocHive React Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main  # Triggers the pipeline automatically when code hits the main branch
+  workflow_dispatch: # Allows you to manually trigger the deployment from the Actions tab
+
+# Set safe permissions for the GITHUB_TOKEN to orchestrate Pages deployments natively
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Prevent concurrent deployments from messing up resource state
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Monorepo Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Compile Distribution Assets (Vite Build)
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Setup GitHub Pages Deployment Context
+        uses: actions/configure-pages@v4
+
+      - name: Upload Production Bundles as Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend/dist' # Points directly into Vite's production output subfolder
+
+      - name: Deploy Production Artifact to GitHub Pages Cloud
+        id: deployment
+        uses: actions/deploy-pages@v4

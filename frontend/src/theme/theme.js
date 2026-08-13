@@ -16,7 +16,7 @@ export const getTheme = (mode) =>
               sidebar: "#e4ecf9",
               chatHeader: "#dde9fa",
               chatWindow: "#f8fafc",
-              chatInputBox: "#dde9fa",
+              chatInputBox: "#e4ecf9",
               chatInput: "#eef3fb",
               documentItem: "#ffffff",
               documentItemSelected: "#d9e8ff",

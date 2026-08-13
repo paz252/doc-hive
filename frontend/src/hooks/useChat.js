@@ -10,18 +10,10 @@ export default function useChat(documentIds = []) {
   const abortControllerRef = useRef(null);
   const documentIdsRef = useRef(documentIds);
 
-  /*
-   * Keep the latest document context available
-   * without recreating sendMessage whenever the
-   * sidebar selection changes.
-   */
   useEffect(() => {
     documentIdsRef.current = documentIds;
   }, [documentIds]);
 
-  /*
-   * Send a query to the DocHive SSE endpoint.
-   */
   const sendMessage = useCallback(
     async (query) => {
       const trimmedQuery = query?.trim();
@@ -59,13 +51,17 @@ export default function useChat(documentIds = []) {
 
       abortControllerRef.current = controller;
 
+      const appendToAssistantMessage = (chunk) => {
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, content: message.content + chunk }
+              : message
+          )
+        );
+      };
+
       try {
-        /*
-         * IMPORTANT:
-         *
-         * documentIds = []
-         * means ALL documents to the backend.
-         */
         const response = await fetch(
           `${API_BASE_URL}/api/v1/chat/stream`,
           {
@@ -78,9 +74,7 @@ export default function useChat(documentIds = []) {
 
             body: JSON.stringify({
               engine: "DOCHIVE",
-              documentIds: [
-                ...documentIdsRef.current,
-              ],
+              documentIds: [...documentIdsRef.current],
               query: trimmedQuery,
             }),
 
@@ -89,17 +83,11 @@ export default function useChat(documentIds = []) {
         );
 
         if (!response.ok) {
-          let message =
-            `Chat request failed (${response.status})`;
+          let message = `Chat request failed (${response.status})`;
 
           try {
-            const errorBody =
-              await response.json();
-
-            message =
-              errorBody?.message ||
-              errorBody?.error ||
-              message;
+            const errorBody = await response.json();
+            message = errorBody?.message || errorBody?.error || message;
           } catch {
             // Response wasn't JSON.
           }
@@ -113,96 +101,50 @@ export default function useChat(documentIds = []) {
           );
         }
 
-        const reader =
-          response.body.getReader();
-
-        const decoder = new TextDecoder();
-
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
         let buffer = "";
 
         while (true) {
-          const { value, done } =
-            await reader.read();
+          const { value, done } = await reader.read();
+          if (done) break;
 
-          if (done) {
-            break;
-          }
+          buffer += decoder.decode(value, { stream: true });
 
-          /*
-           * Decode the incoming byte chunk.
-           */
-          buffer += decoder.decode(value, {
-            stream: true,
-          });
+          // SSE lines are newline-delimited
+          const lines = buffer.split("\n");
+          buffer = lines.pop(); // last part may be incomplete, keep for next read
 
-          /*
-           * SSE events are separated by a blank line.
-           *
-           * Example:
-           *
-           * data: Hello
-           *
-           * data: world
-           *
-           */
-          const events = buffer.split(
-            /\r?\n\r?\n/
-          );
+          for (const line of lines) {
+            if (!line.startsWith("data:")) continue;
 
-          /*
-           * The final element may be an incomplete
-           * SSE event. Keep it for the next chunk.
-           */
-          buffer = events.pop() || "";
+            // Strip ONLY the "data:" prefix — keep any leading space, it's meaningful content
+            const chunk = line.slice(5);
 
-          for (const event of events) {
-            processSseEvent(
-              event,
-              assistantMessageId,
-              setMessages
-            );
+            if (chunk === "[DONE]") continue;
+
+            appendToAssistantMessage(chunk);
           }
         }
 
-        /*
-         * Flush any remaining decoder data.
-         */
-        buffer += decoder.decode();
-
-        if (buffer.trim()) {
-          processSseEvent(
-            buffer,
-            assistantMessageId,
-            setMessages
-          );
+        // flush any remaining buffered line without a trailing newline
+        if (buffer.startsWith("data:")) {
+          const chunk = buffer.slice(5);
+          if (chunk && chunk !== "[DONE]") {
+            appendToAssistantMessage(chunk);
+          }
         }
       } catch (err) {
-        /*
-         * AbortController cancellation is expected
-         * when the user presses Stop.
-         */
-        if (
-          err?.name === "AbortError" ||
-          controller.signal.aborted
-        ) {
+        if (err?.name === "AbortError" || controller.signal.aborted) {
           return;
         }
 
-        console.error(
-          "DocHive chat request failed:",
-          err
-        );
+        console.error("DocHive chat request failed:", err);
 
         setError(
-          err?.message ||
-            "Unable to get a response from DocHive."
+          err?.message || "Unable to get a response from DocHive."
         );
 
-        /*
-         * Remove the empty assistant message if
-         * the request failed before any response
-         * was received.
-         */
         setMessages((previous) =>
           previous.filter(
             (message) =>
@@ -211,9 +153,7 @@ export default function useChat(documentIds = []) {
           )
         );
       } finally {
-        if (
-          abortControllerRef.current === controller
-        ) {
+        if (abortControllerRef.current === controller) {
           abortControllerRef.current = null;
           setIsLoading(false);
         }
@@ -222,9 +162,6 @@ export default function useChat(documentIds = []) {
     [isLoading]
   );
 
-  /*
-   * Clear the entire conversation.
-   */
   const clearChat = useCallback(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -236,11 +173,6 @@ export default function useChat(documentIds = []) {
     setIsLoading(false);
   }, []);
 
-  /*
-   * Stop the currently running AI response.
-   *
-   * Already received content remains in the chat.
-   */
   const stopGeneration = useCallback(() => {
     if (!abortControllerRef.current) {
       return;
@@ -260,105 +192,4 @@ export default function useChat(documentIds = []) {
     clearChat,
     stopGeneration,
   };
-}
-
-/*
- * Process one complete SSE event.
- *
- * Example:
- *
- * data: Hello
- *
- * or:
- *
- * data: {"content":"Hello"}
- *
- * Spring's SSE response may contain either
- * plain text or JSON depending on the controller.
- */
-function processSseEvent(
-  event,
-  assistantMessageId,
-  setMessages
-) {
-  if (!event?.trim()) {
-    return;
-  }
-
-  const dataLines = event
-    .split(/\r?\n/)
-    .filter((line) =>
-      line.startsWith("data:")
-    )
-    .map((line) =>
-      line.substring(5).trimStart()
-    );
-
-  if (dataLines.length === 0) {
-    return;
-  }
-
-  const data = dataLines.join("\n");
-
-  if (!data || data === "[DONE]") {
-    return;
-  }
-
-  const content = extractContent(data);
-
-  if (!content) {
-    return;
-  }
-
-  setMessages((previous) =>
-    previous.map((message) =>
-      message.id === assistantMessageId
-        ? {
-            ...message,
-            content:
-              message.content + content,
-          }
-        : message
-    )
-  );
-}
-
-/*
- * Supports several possible SSE payload formats:
- *
- * 1. data: Hello
- *
- * 2. data: {"content":"Hello"}
- *
- * 3. data: {"response":"Hello"}
- *
- * 4. data: {"text":"Hello"}
- */
-function extractContent(data) {
-  try {
-    const parsed = JSON.parse(data);
-
-    if (typeof parsed === "string") {
-      return parsed;
-    }
-
-    if (typeof parsed?.content === "string") {
-      return parsed.content;
-    }
-
-    if (typeof parsed?.response === "string") {
-      return parsed.response;
-    }
-
-    if (typeof parsed?.text === "string") {
-      return parsed.text;
-    }
-
-    return "";
-  } catch {
-    /*
-     * Not JSON — treat it as plain SSE text.
-     */
-    return data;
-  }
 }

@@ -5,19 +5,25 @@ import Sidebar from "../Sidebar/Sidebar";
 import Footer from "../Footer/Footer";
 import ChatWindow from "../Chat/ChatWindow";
 
+import { fetchStorageStats } from "../../api/myResources";
+
 import "./AppLayout.css";
 
 export default function AppLayout({
   mode,
   onToggleTheme,
 }) {
-  const [allDocumentsSelected, setAllDocumentsSelected] =
-    useState(false);
+  const [allDocumentsSelected, setAllDocumentsSelected] = useState(false);
 
-  const [selectedDocumentIds, setSelectedDocumentIds] =
-    useState([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState([]);
 
   const [documents, setDocuments] = useState([]);
+
+  const [stats, setStats] = useState({
+    doc_count: 0,
+    chunk_count: 0,
+    total_size_mb: 0,
+  });
 
   /*
    * Sidebar owns document fetching, but AppLayout
@@ -29,6 +35,17 @@ export default function AppLayout({
     },
     []
   );
+
+  /*
+   * Refresh storage stats whenever the document list
+   * changes (initial load, upload, or delete) — Sidebar
+   * already calls handleDocumentsChange after each of
+   * those, so this piggybacks on that signal instead of
+   * needing a separate refresh mechanism.
+   */
+  useEffect(() => {
+    fetchStorageStats().then(setStats);
+  }, [documents]);
 
   /*
    * Context selection comes from Sidebar or from
@@ -56,8 +73,8 @@ export default function AppLayout({
   const selectedDocuments = allDocumentsSelected
     ? documents
     : documents.filter((document) =>
-        selectedDocumentIds.includes(document.id)
-      );
+      selectedDocumentIds.includes(document.id)
+    );
 
   /*
    * Backend representation:
@@ -74,37 +91,25 @@ export default function AppLayout({
       <Navbar
         mode={mode}
         onToggleTheme={onToggleTheme}
+        stats={stats}
+        storageLimitMB={500}
       />
 
       <div className="app-content">
         <Sidebar
-          allDocumentsSelected={
-            allDocumentsSelected
-          }
-          selectedDocumentIds={
-            selectedDocumentIds
-          }
-          onContextChange={
-            handleContextChange
-          }
-          onDocumentsChange={
-            handleDocumentsChange
-          }
+          allDocumentsSelected={allDocumentsSelected}
+          selectedDocumentIds={selectedDocumentIds}
+          onContextChange={handleContextChange}
+          onDocumentsChange={handleDocumentsChange}
         />
 
         <main className="main-area">
           <ChatWindow
             documentIds={documentIds}
             documents={documents}
-            selectedDocuments={
-              selectedDocuments
-            }
-            allDocumentsSelected={
-              allDocumentsSelected
-            }
-            onContextChange={
-              handleContextChange
-            }
+            selectedDocuments={selectedDocuments}
+            allDocumentsSelected={allDocumentsSelected}
+            onContextChange={handleContextChange}
           />
         </main>
       </div>

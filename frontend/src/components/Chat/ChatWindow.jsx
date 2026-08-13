@@ -134,13 +134,14 @@ export default function ChatWindow({
 
       {/* Prompt input */}
       <Box
-        sx={{
+        sx={(theme) => ({
           flexShrink: 0,
           px: 3,
           py: 2,
           borderTop: 1,
           borderColor: "divider",
-        }}
+          backgroundColor: theme.palette.surface.chatHeader
+        })}
       >
         <ChatInput
           streaming={isLoading}

@@ -182,7 +182,7 @@ export default function DocumentUpload({
             fontSize: "0.7rem",
           })}
         >
-          PDF, Word, Markdown, TXT, Image (max 10MB)
+          PDF, Word, Markdown, TXT, Image (max 25MB)
         </Typography>
       </Paper>
     </>
