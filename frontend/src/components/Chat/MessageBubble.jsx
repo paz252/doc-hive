@@ -55,7 +55,7 @@ export default function MessageBubble({
         direction="row"
         spacing={1.5}
         sx={{
-          maxWidth: "75%",
+          maxWidth: { xs: "88%", sm: "75%" },
           alignItems: "flex-start",
           ":hover .message-meta": {
             opacity: 1,

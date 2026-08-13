@@ -99,7 +99,11 @@ export default function ChatWindow({
       >
         <Box
           sx={{
-            width: "75%",
+            // Fixed 75% wasted space on narrow screens (e.g. 375px viewport
+            // → only ~280px of usable width). Full width on mobile with
+            // horizontal padding instead, widening progressively.
+            width: { xs: "100%", md: "85%", lg: "75%" },
+            px: { xs: 1.5, sm: 0 },
             mx: "auto",
             minHeight: "100%",
             display: "flex",
@@ -136,8 +140,8 @@ export default function ChatWindow({
       <Box
         sx={(theme) => ({
           flexShrink: 0,
-          px: 3,
-          py: 2,
+          px: { xs: 1.5, sm: 3 },
+          py: { xs: 1.5, sm: 2 },
           borderTop: 1,
           borderColor: "divider",
           backgroundColor: theme.palette.surface.chatHeader

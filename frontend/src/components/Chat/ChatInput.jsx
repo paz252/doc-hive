@@ -54,7 +54,10 @@ export default function ChatInput({
         border: "1px solid transparent",
         borderRadius: 1,
         backgroundColor: theme.palette.surface.chatWindow,
-        width: "50%",
+        // Fixed 50% left almost no room on mobile. Scale by breakpoint
+        // instead, capped so it doesn't stretch too wide on large desktops.
+        width: { xs: "100%", sm: "85%", md: "70%", lg: "60%" },
+        maxWidth: 720,
         margin: "0 auto",
         transition: "border-color 0.2s ease, box-shadow 0.2s ease",
         "&:focus-within": {
@@ -67,7 +70,6 @@ export default function ChatInput({
         fullWidth
         multiline
         maxRows={6}
-       
         placeholder={
           streaming
             ? "DocHive is thinking..."

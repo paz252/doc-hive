@@ -63,8 +63,8 @@ export default function DocumentContextDialog({
 
     const nextIds = isSelected
       ? selectedDocumentIds.filter(
-          (id) => id !== documentId
-        )
+        (id) => id !== documentId
+      )
       : [...selectedDocumentIds, documentId];
 
     /*
@@ -99,6 +99,13 @@ export default function DocumentContextDialog({
       onClose={onClose}
       fullWidth
       maxWidth="xs"
+      slotProps={{
+        backdrop: {
+          sx: {
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+          },
+        },
+      }}
     >
       <DialogTitle
         sx={{
@@ -109,12 +116,14 @@ export default function DocumentContextDialog({
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h6">
-            Document context
+            Documents In Context
           </Typography>
 
           <Typography
-            variant="caption"
-            color="text.secondary"
+            variant="subtitle2"
+            sx={(theme) => ({
+              color: theme.palette.text.secondary
+            })}
           >
             Choose which documents this chat can see
           </Typography>
@@ -127,7 +136,11 @@ export default function DocumentContextDialog({
 
       <Divider />
 
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent sx={{
+        p: 0,
+        maxHeight: { xs: "60vh", sm: "65vh" },
+        overflowY: "auto",
+      }}>
         <List disablePadding>
           <ListItemButton
             divider

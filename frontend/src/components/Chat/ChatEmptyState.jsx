@@ -57,8 +57,8 @@ export default function ChatEmptyState({
         width: "100%",
         display: "flex",
         justifyContent: "center",
-        px: 3,
-        py: 5,
+        px: { xs: 1.5, sm: 3 },
+        py: { xs: 3, sm: 5 },
       }}
     >
       <Box

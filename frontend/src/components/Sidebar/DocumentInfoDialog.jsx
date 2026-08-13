@@ -8,6 +8,8 @@ import {
   IconButton,
   Stack,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
@@ -22,6 +24,9 @@ export default function DocumentInfoDialog({
   open,
   onClose,
 }) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const {
     chunks,
     loading,
@@ -36,6 +41,7 @@ export default function DocumentInfoDialog({
       onClose={onClose}
       fullWidth
       maxWidth="md"
+      fullScreen={fullScreen}
       slotProps={{
         backdrop: {
           sx: {
@@ -67,7 +73,7 @@ export default function DocumentInfoDialog({
             variant="h6"
             noWrap
             title={document?.fileName}
-            sx={{ lineHeight: 1.6 }}
+            sx={{ lineHeight: 1.6, fontSize: { xs: "1.05rem", sm: "1.25rem" } }}
           >
             {document?.fileName}
           </Typography>
@@ -93,8 +99,11 @@ export default function DocumentInfoDialog({
 
       <DialogContent
         sx={(theme) => ({
-          maxHeight: "70vh",
+          // Fixed 70vh cap made sense in a centered modal; in fullScreen
+          // mode on mobile the dialog IS the viewport, so let it fill.
+          maxHeight: { xs: "none", sm: "70vh" },
           overflowY: "auto",
+          px: { xs: 2, sm: 3 },
           scrollbarWidth: "thin",
           scrollbarColor:
             theme.palette.mode === "dark"
@@ -179,7 +188,7 @@ export default function DocumentInfoDialog({
               sx={(theme) => ({
                 mb: 0.5,
                 ml: 0.5,
-                color: theme.palette.text.white,
+                color: theme.palette.text.primary,
               })}
             >
               Text chunks

@@ -43,12 +43,12 @@ export default function ChatHeader({
   return (
     <Box
       sx={(theme) => ({
-        px: 3,
+        px: { xs: 1.5, sm: 3 },
         py: 1,
         border: "none",
         display: "flex",
         alignItems: "center",
-        gap: 1.5,
+        gap: { xs: 0.75, sm: 1.5 },
         backgroundColor: theme.palette.surface.chatHeader,
       })}
     >
@@ -115,6 +115,7 @@ export default function ChatHeader({
               flex: "0 1 auto",
               minWidth: 0,
               letterSpacing: 0.5,
+              fontSize: { xs: "0.7rem", sm: "0.75rem" },
               color:
                 theme.palette.mode === "dark"
                   ? theme.palette.text.secondary
@@ -128,7 +129,12 @@ export default function ChatHeader({
               },
             })}
           >
-            <span style={{ color: "inherit" }}>Context:</span>{" "}
+            {/* "Context:" prefix only shown from sm up — on very narrow
+                screens the label itself (which can be a long filename)
+                needs the room more than the prefix does. */}
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              Context:{" "}
+            </Box>
             <span className="context-label">{contextLabel}</span>
           </Typography>
 
@@ -157,6 +163,7 @@ export default function ChatHeader({
               px: 1,
               borderRadius: 1,
               color: "text.secondary",
+              flexShrink: 0,
               "&:hover": {
                 color: "error.main",
                 backgroundColor: (theme) =>
@@ -167,7 +174,10 @@ export default function ChatHeader({
             }}
           >
             <DeleteSweepOutlinedIcon sx={{ fontSize: 16 }} />
-            <span>Clear</span>
+            {/* "Clear" text only shown sm+ — icon alone + tooltip on mobile */}
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" }, ml: 0.5 }}>
+              Clear
+            </Box>
           </IconButton>
         </span>
       </Tooltip>

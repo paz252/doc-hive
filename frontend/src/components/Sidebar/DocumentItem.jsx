@@ -26,7 +26,7 @@ export default function DocumentItem({
       variant="outlined"
       onClick={() => onSelect(document)}
       sx={(theme) => ({
-        p: 2,
+        p: { xs: 1.5, sm: 2 },
         cursor: "pointer",
         border: "none",
         backgroundColor: selected
@@ -38,6 +38,9 @@ export default function DocumentItem({
             ? theme.palette.surface.documentItemSelected
             : theme.palette.action.hover,
         },
+        // Only meaningful on devices that actually support hover;
+        // on touch this selector simply never matches, which is fine
+        // because the actions are opacity:1 by default below sm anyway.
         "&:hover .document-item-actions": {
           opacity: 1,
           pointerEvents: "auto",
@@ -100,8 +103,9 @@ export default function DocumentItem({
               onClick={(event) => event.stopPropagation()}
               className="document-item-actions"
               sx={{
-                opacity: 0,
-                pointerEvents: "none",
+                // Always visible + tappable on touch (xs/sm), hover-reveal on desktop (md+)
+                opacity: { xs: 1, md: 0 },
+                pointerEvents: { xs: "auto", md: "none" },
                 transition: "opacity 0.2s ease",
                 "&:hover": {
                   opacity: 1,

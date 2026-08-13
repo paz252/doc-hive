@@ -23,8 +23,8 @@ export default function MessageList({
       sx={{
         flex: 1,
         minHeight: 0,
-        px: 3,
-        py: 3,
+        px: { xs: 1, sm: 3 },
+        py: { xs: 2, sm: 3 },
       }}
     >
       <Stack

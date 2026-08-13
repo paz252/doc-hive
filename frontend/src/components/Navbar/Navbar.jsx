@@ -41,12 +41,20 @@ export default function Navbar({
         border: "none",
       })}
     >
-      <Toolbar>
+      <Toolbar
+        sx={{
+          gap: { xs: 0.5, sm: 1 },
+          px: { xs: 1, sm: 2 },
+          minHeight: { xs: 56, sm: 64 },
+        }}
+      >
+        {/* Logo */}
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             gap: 0.5,
+            flexShrink: 0,
           }}
         >
           <MenuBookOutlined color="primary" />
@@ -57,13 +65,11 @@ export default function Navbar({
             sx={{
               fontWeight: 700,
               letterSpacing: "-0.02em",
+              fontSize: { xs: "1.1rem", sm: "1.25rem" },
             }}
           >
             Doc
-            <Box
-              component="span"
-              sx={{ color: "primary.main" }}
-            >
+            <Box component="span" sx={{ color: "primary.main" }}>
               Hive
             </Box>
           </Typography>
@@ -71,17 +77,19 @@ export default function Navbar({
 
         <Box sx={{ flexGrow: 1 }} />
 
-        {/* Storage/usage indicator */}
+        {/* Storage/usage indicator — collapses to icon-only below sm */}
         <Tooltip
           title={`${stats.total_size_mb.toFixed(2)} MB of ${storageLimitMB} MB · ${stats.chunk_count} chunks`}
+          enterDelay={0}
+          leaveDelay={0}
         >
           <Box
             sx={(theme) => ({
               display: "flex",
               alignItems: "center",
-              minWidth: 160,
+              minWidth: { xs: 0, sm: 160 },
               gap: 1,
-              px: 1.5,
+              px: { xs: 0.75, sm: 1.5 },
               py: 0.5,
               borderRadius: 1,
               border: `1px solid ${theme.palette.divider}`,
@@ -91,12 +99,8 @@ export default function Navbar({
               "&:hover": {
                 borderColor: theme.palette.info.main,
                 backgroundColor: theme.palette.action.hover,
-                "& .storage-icon": {
-                  color: theme.palette.info.main,
-                },
-                "& .storage-text": {
-                  color: theme.palette.info.main,
-                },
+                "& .storage-icon": { color: theme.palette.info.main },
+                "& .storage-text": { color: theme.palette.info.main },
               },
             })}
           >
@@ -104,7 +108,8 @@ export default function Navbar({
               className="storage-icon"
               sx={{ fontSize: 16, color: "text.secondary", transition: "color 0.2s" }}
             />
-            <Box sx={{ minWidth: 120 }}>
+            {/* Text + progress bar hidden below sm — icon + tooltip carries the info */}
+            <Box sx={{ minWidth: 120, display: { xs: "none", sm: "block" } }}>
               <Typography
                 variant="caption"
                 className="storage-text"
@@ -115,6 +120,7 @@ export default function Navbar({
                   lineHeight: 1.2,
                   display: "block",
                   transition: "color 0.2s",
+                  whiteSpace: "nowrap",
                 }}
               >
                 {stats.doc_count} docs · {stats.total_size_mb.toFixed(2)}/{storageLimitMB} MB
@@ -140,34 +146,52 @@ export default function Navbar({
           </Box>
         </Tooltip>
 
-        <Box sx={{ flexGrow: 1 }} />
+        <Box sx={{ flexGrow: 1, display: { xs: "none", sm: "block" } }} />
+
+        {/* Portfolio Link — full text button on md+, icon-only below md */}
+        <Tooltip title="View Portfolio">
+          <Button
+            component="a"
+            href={endPoints.portfolio}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="outlined"
+            startIcon={<OpenInNew />}
+            sx={(theme) => ({
+              display: { xs: "none", md: "inline-flex" },
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: "none",
+              color: theme.palette.text.secondary,
+              backgroundColor: theme.palette.surface.sidebar,
+              borderColor: theme.palette.divider,
+              borderRadius: 1,
+              px: 1,
+              whiteSpace: "nowrap",
+              "&:hover": {
+                color: theme.palette.primary.main,
+                borderColor: theme.palette.primary.main,
+                backgroundColor: theme.palette.action.hover,
+              },
+            })}
+          >
+            Developer's Portfolio
+          </Button>
+        </Tooltip>
 
         {/* Portfolio Link */}
-        <Button
-          component="a"
-          href={endPoints.portfolio}
-          target="_blank"
-          rel="noopener noreferrer"
-          variant="outlined"
-          startIcon={<OpenInNew />}
-          sx={(theme) => ({
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: "none",
-            color: theme.palette.text.secondary,
-            backgroundColor: theme.palette.surface.sidebar,
-            borderColor: theme.palette.divider,
-            borderRadius: 1,
-            px: 1,
-            "&:hover": {
-              color: theme.palette.primary.main,
-              borderColor: theme.palette.primary.main,
-              backgroundColor: theme.palette.action.hover,
-            },
-          })}
-        >
-          Developer's Portfolio
-        </Button>
+        <Tooltip title="View Portfolio">
+          <IconButton
+            component="a"
+            href={endPoints.portfolio}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Developer's Portfolio"
+            sx={{ display: { xs: "inline-flex", md: "none" }, color: "text.secondary" }}
+          >
+            <OpenInNew sx={{ fontSize: 20 }} />
+          </IconButton>
+        </Tooltip>
 
         {/* GitHub Link */}
         <Tooltip title="View source on GitHub">
@@ -177,7 +201,7 @@ export default function Navbar({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="View source on GitHub"
-            sx={{ ml: 1, color: "text.secondary" }}
+            sx={{ ml: { xs: 0, sm: 1 }, color: "text.secondary" }}
           >
             <GitHub sx={{ fontSize: 20 }} />
           </IconButton>
@@ -187,13 +211,9 @@ export default function Navbar({
           onClick={onToggleTheme}
           color="inherit"
           aria-label="Toggle theme"
-          sx={{ ml: 1 }}
+          sx={{ ml: { xs: 0, sm: 1 } }}
         >
-          {mode === "dark" ? (
-            <LightMode />
-          ) : (
-            <DarkMode />
-          )}
+          {mode === "dark" ? <LightMode /> : <DarkMode />}
         </IconButton>
       </Toolbar>
     </AppBar>
