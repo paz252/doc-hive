@@ -5,6 +5,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 
+import com.dochive.dochive_backend.enums.IngestionStatus;
+
 @Entity
 @Table(name = "document_metadata")
 @Getter
@@ -18,7 +20,7 @@ public class DocumentMetaData {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String fileName;
 
     @Column(nullable = false)
@@ -26,7 +28,16 @@ public class DocumentMetaData {
 
     private Long fileSize;
 
-    private Integer totalChunks;
+    @Builder.Default
+    private Integer totalChunks = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private IngestionStatus status = IngestionStatus.PENDING;
+
+    @Column(length = 1000)
+    private String errorMessage;
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime uploadedAt;

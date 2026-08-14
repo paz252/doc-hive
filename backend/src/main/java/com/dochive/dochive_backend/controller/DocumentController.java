@@ -1,6 +1,7 @@
 package com.dochive.dochive_backend.controller;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -15,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.dochive.dochive_backend.dto.DocumentChunkResponse;
+import com.dochive.dochive_backend.dto.DocumentStatusResponse;
 import com.dochive.dochive_backend.entity.DocumentMetaData;
 import com.dochive.dochive_backend.service.DocumentIngestionService;
 
@@ -34,11 +37,29 @@ public class DocumentController {
     private final DocumentIngestionService ingestionService;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "Ingest document (PDF, DOCX, TXT, MD) into Vector Store")
-    public ResponseEntity<DocumentMetaData> uploadDocument(@RequestParam("file") MultipartFile file)
+    @Operation(summary = "Submit document (PDF, DOCX, TXT, MD, image) for ingestion into Vector Store")
+    public ResponseEntity<DocumentMetaData> uploadDocument(@RequestParam("file") MultipartFile file, UriComponentsBuilder uriBuilder)
             throws IOException {
-        DocumentMetaData metadata = ingestionService.ingestDocument(file);
-        return ResponseEntity.status(HttpStatus.CREATED).body(metadata);
+        DocumentMetaData metadata = ingestionService.submitDocument(file);
+
+        URI statusUri = uriBuilder.path("/api/v1/documents/{id}/status")
+                .buildAndExpand(metadata.getId())
+                .toUri();
+        
+        return ResponseEntity.status(HttpStatus.ACCEPTED).location(statusUri).body(metadata);
+    }
+
+    @GetMapping("/{id}/status")
+    @Operation(summary = "Poll ingestion status for an uploaded document")
+    public ResponseEntity<DocumentStatusResponse> getStatus(@PathVariable String id) {
+        DocumentMetaData m = ingestionService.getDocumentById(id);
+        return ResponseEntity.ok(DocumentStatusResponse.builder()
+                .id(m.getId())
+                .fileName(m.getFileName())
+                .status(m.getStatus())
+                .totalChunks(m.getTotalChunks())
+                .errorMessage(m.getErrorMessage())
+                .build());
     }
 
     @GetMapping

@@ -11,6 +11,8 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.dochive.dochive_backend.dto.DocumentChunkResponse;
 import com.dochive.dochive_backend.entity.DocumentMetaData;
+import com.dochive.dochive_backend.enums.IngestionStatus;
 import com.dochive.dochive_backend.repository.DocumentRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -29,9 +32,13 @@ public class DocumentIngestionService {
 
     private final VectorStore vectorStore;
     private final DocumentRepository documentRepository;
+    private final AsyncIngestionProcessor asyncProcessor;
 
-    @Transactional
-    public DocumentMetaData ingestDocument(MultipartFile file) throws IOException {
+    /**
+     * Saves metadata synchronously (fast, so the client gets an ID immediately),
+     * then hands parsing/chunking/embedding off to the async executor.
+     */
+    public DocumentMetaData submitDocument(MultipartFile file) throws IOException {
         String filename = file.getOriginalFilename();
 
         // Check for duplicates
@@ -39,62 +46,21 @@ public class DocumentIngestionService {
             throw new IllegalArgumentException("A document with the name '" + filename + "' already exists.");
         }
 
+        byte[] fileBytes = file.getBytes();
         String contentType = file.getContentType();
-        Resource resource = new InputStreamResource(file.getInputStream());
-        List<Document> rawDocuments;
 
-        // Reader selection: PDFs use PagePdfDocumentReader; images/DOCX/TXT/MD use
-        // TikaDocumentReader
-        if (contentType != null && contentType.toLowerCase().contains("pdf")) {
-            PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource);
-            rawDocuments = pdfReader.get();
-        } else {
-            // TikaDocumentReader delegates image formats (.png, .jpg, .jpeg) to Tesseract
-            // OCR automatically
-            TikaDocumentReader tikaReader = new TikaDocumentReader(resource);
-            rawDocuments = tikaReader.get();
-        }
-
-        // Save metadata entity first to generate Document UUID
         DocumentMetaData metadata = DocumentMetaData.builder()
                 .fileName(filename)
                 .contentType(contentType)
                 .fileSize(file.getSize())
-                .build();
-        DocumentMetaData savedMetadata = documentRepository.save(metadata);
-
-        // Token Chunking
-        TokenTextSplitter textSplitter = TokenTextSplitter.builder()
-                .withChunkSize(800)
-                .withMinChunkSizeChars(500)
-                .withMinChunkLengthToEmbed(10)
-                .withMaxNumChunks(10000)
-                .withKeepSeparator(true)
+                .status(IngestionStatus.PENDING)
+                .totalChunks(0)
                 .build();
 
-        List<Document> chunks = textSplitter.apply(rawDocuments);
+        DocumentMetaData saved = documentRepository.save(metadata);
+        asyncProcessor.process(saved.getId(), fileBytes, contentType, filename);
 
-        // Enrich chunks with metadata context filters using Spring AI .mutate()
-        List<Document> enrichedChunks = chunks.stream()
-                .map(doc -> doc.mutate()
-                        .metadata("documentId", savedMetadata.getId())
-                        .metadata("fileName", filename)
-                        .build())
-                .toList();
-
-        // Vector Store Insertion (Only call vectorStore if readable chunks were
-        // extracted)
-        if (!enrichedChunks.isEmpty()) {
-            vectorStore.accept(enrichedChunks);
-            System.out.printf("Successfully embedded and stored {} chunks for file: {}", enrichedChunks.size(),
-                    filename);
-        } else {
-            System.out.printf("No readable text or tokens extracted from file: {}. Total chunks = 0.", filename);
-        }
-
-        // 7. Save final chunk count (will be 0 if OCR extracted no text)
-        savedMetadata.setTotalChunks(enrichedChunks.size());
-        return documentRepository.save(savedMetadata);
+        return saved;
     }
 
     public List<DocumentMetaData> getAllDocuments() {
@@ -106,7 +72,9 @@ public class DocumentIngestionService {
                 .orElseThrow(() -> new RuntimeException("Document not found with ID: " + id));
     }
 
-    // Retrieves raw text chunks using Spring AI's VectorStore & FilterExpressionBuilder
+    // Retrieves raw text chunks using Spring AI's VectorStore &
+    // FilterExpressionBuilder
+    @Cacheable(value = "documentChunks", key = "#documentId")
     public List<DocumentChunkResponse> getDocumentChunks(String documentId) {
         // Verify document existence
         DocumentMetaData metadata = getDocumentById(documentId);
@@ -134,6 +102,7 @@ public class DocumentIngestionService {
                 .toList();
     }
 
+    @CacheEvict(value = "documentChunks", key = "#id")
     @Transactional
     public void deleteDocument(String id) {
         DocumentMetaData metadata = getDocumentById(id);

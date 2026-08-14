@@ -15,6 +15,8 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.dochive.dochive_backend.service.ChunkingService;
+
 import org.springframework.beans.factory.annotation.Value;
 
 @Configuration
@@ -37,36 +39,30 @@ public class VectorStoreConfig {
 
     // Portfolio In-Memory Vector Store (SimpleVectorStore)
     @Bean(name = "simpleVectorStore")
-    public SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
+    public SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel, ChunkingService chunkingService) {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
 
         try {
-            System.out.printf("Starting Nomi ETL pipeline: Reading resource from {}", markdownResource.getFilename());
+            System.out.printf("Starting Portfolio ETL pipeline: Reading resource from {}",
+                    markdownResource.getFilename());
 
             // Step 1: Extract text content from markdown file
             TextReader textReader = new TextReader(markdownResource);
             List<Document> rawDocuments = textReader.get();
 
             // Step 2: Split text into token chunks
-            TokenTextSplitter textSplitter = TokenTextSplitter.builder()
-                    .withChunkSize(500)
-                    .withMinChunkSizeChars(100)
-                    .withMinChunkLengthToEmbed(5)
-                    .withMaxNumChunks(10000)
-                    .withKeepSeparator(true)
-                    .build();
-            List<Document> splitDocuments = textSplitter.apply(rawDocuments);
+            List<Document> splitDocuments = chunkingService.chunk(rawDocuments, ChunkingConfig.portfolioDefaults());
 
             // Step 3: Compute embeddings and populate SimpleVectorStore
             System.out.printf("Generating embeddings and writing %d chunks to SimpleVectorStore...",
                     splitDocuments.size());
             simpleVectorStore.add(splitDocuments);
-            System.out.println("ETL Ingestion completed successfully. NOMI portfolio data is grounded.");
+            System.out.println("ETL Ingestion completed successfully. Portfolio data is grounded.");
 
         } catch (Exception e) {
-            System.err.printf("Failed to complete Nomi vector store ingestion from markdown file: %s", e.getMessage());
+            System.err.printf("Failed to complete portfolio vector store ingestion from markdown file: %s", e.getMessage());
             throw new IllegalStateException(
-                    "Nomi vector store initialization failed - application cannot serve grounded answers", e);
+                    "Portfolio vector store initialization failed - application cannot serve grounded answers", e);
         }
 
         return simpleVectorStore;

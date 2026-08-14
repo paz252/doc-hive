@@ -15,17 +15,25 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.dochive.dochive_backend.strategy.RagStrategy;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class PolymorphicRagService {
+
     private final ChatClient.Builder chatClientBuilder;
-    private final Map<String, RagStrategy> strategyMap;
+    private final RagContextCacheService contextCacheService;
     private final ExecutorService executor = Executors.newCachedThreadPool();
 
-    public PolymorphicRagService(ChatClient.Builder chatClientBuilder, List<RagStrategy> strategies) {
-        this.chatClientBuilder = chatClientBuilder;
-        // Map strategy type (DOCHIVE / PORTFOLIO) to implementation
-        this.strategyMap = strategies.stream()
-                .collect(Collectors.toMap(RagStrategy::getStrategyType, Function.identity()));
+    private final List<RagStrategy> strategyList; // used to build the map below
+    private Map<String, RagStrategy> strategyMap;
+
+    private Map<String, RagStrategy> strategies() {
+        if (strategyMap == null) {
+            strategyMap = strategyList.stream()
+                    .collect(Collectors.toMap(RagStrategy::getStrategyType, Function.identity()));
+        }
+        return strategyMap;
     }
 
     public SseEmitter streamResponse(String engineType, List<String> documentIds, String query) {
@@ -33,18 +41,19 @@ public class PolymorphicRagService {
 
         executor.execute(() -> {
             try {
-                RagStrategy strategy = strategyMap.get(engineType.toUpperCase());
+                RagStrategy strategy = strategies().get(engineType.toUpperCase());
                 if (strategy == null) {
                     throw new IllegalArgumentException("Unsupported RAG engine type: " + engineType);
                 }
 
-                // Retrieve context polymorphically
-                List<Document> contexts = strategy.retrieveContext(query, documentIds);
+                // Cached context retrieval — repeated/near-identical queries skip the vector
+                // search
+                List<Document> contexts = contextCacheService.retrieve(strategy, engineType.toUpperCase(), query,
+                        documentIds);
                 final String contextText = extractContextText(contexts);
 
                 ChatClient chatClient = chatClientBuilder.build();
 
-                // Stream tokens
                 chatClient.prompt()
                         .system(sys -> sys.text(strategy.getSystemPrompt()).param("context", contextText))
                         .user(query)
@@ -70,7 +79,7 @@ public class PolymorphicRagService {
     }
 
     /**
-     * Helper method to safely extract and format text chunks, 
+     * Helper method to safely extract and format text chunks,
      * keeping the caller method clean and effectively final.
      */
     private String extractContextText(List<Document> contexts) {
