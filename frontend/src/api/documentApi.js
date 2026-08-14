@@ -15,6 +15,14 @@ export async function getDocument(id) {
   return response.data;
 }
 
+export async function getDocumentStatus(id) {
+  const response = await apiClient.get(
+    `${DOCUMENTS_URL}/${id}/status`
+  );
+
+  return response.data;
+}
+
 export async function getDocumentChunks(id) {
   const response = await apiClient.get(
     `${DOCUMENTS_URL}/${id}/chunks`

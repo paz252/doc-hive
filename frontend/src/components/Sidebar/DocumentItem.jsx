@@ -1,5 +1,6 @@
 import {
   Box,
+  CircularProgress,
   IconButton,
   Paper,
   Stack,
@@ -11,32 +12,58 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircle";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutlined";
+import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 import { formatFileSize } from "../../utils/formatFileSize";
+
+const STATUS_DISPLAY = {
+  PENDING: { label: "Queued", color: "text.secondary", inProgress: true },
+  PARSING: { label: "Parsing", color: "info.main", inProgress: true },
+  CHUNKING: { label: "Chunking", color: "info.main", inProgress: true },
+  EMBEDDING: { label: "Embedding", color: "info.main", inProgress: true },
+  COMPLETED: { label: "Indexed", color: "success.main", inProgress: false },
+  FAILED: { label: "Failed", color: "error.main", inProgress: false },
+};
 
 export default function DocumentItem({
   document,
   selected,
+  disabled,
   onSelect,
   onInfo,
   onDelete,
 }) {
+
+  const statusDisplay =
+    STATUS_DISPLAY[document.status] ?? STATUS_DISPLAY.PENDING;
+
+  const handleClick = () => {
+    if (disabled || !onSelect) {
+      return;
+    }
+    onSelect(document);
+  };
+
   return (
     <Paper
       variant="outlined"
-      onClick={() => onSelect(document)}
+      onClick={handleClick}
       sx={(theme) => ({
         p: { xs: 1.5, sm: 2 },
         cursor: "pointer",
         border: "none",
+        opacity: disabled ? 0.6 : 1,
         backgroundColor: selected
           ? theme.palette.surface.documentItemSelected
           : theme.palette.surface.documentItem,
-        transition: "background-color 0.2s ease",
+        transition: "background-color 0.2s ease, opacity 0.2s ease",
         "&:hover": {
-          backgroundColor: selected
-            ? theme.palette.surface.documentItemSelected
-            : theme.palette.action.hover,
+          backgroundColor: disabled
+            ? theme.palette.surface.documentItem
+            : selected
+              ? theme.palette.surface.documentItemSelected
+              : theme.palette.action.hover,
         },
         // Only meaningful on devices that actually support hover;
         // on touch this selector simply never matches, which is fine
@@ -187,33 +214,57 @@ export default function DocumentItem({
               {document.totalChunks} chunks
             </Typography>
 
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={0.2}
-              sx={{
-                color: "success.main",
-                ml: "auto",
-                mt: "1px",
-              }}
+            <Tooltip
+              title={
+                document.status === "FAILED"
+                  ? document.errorMessage || "Ingestion failed"
+                  : ""
+              }
             >
-              <CheckCircleOutlineIcon
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.2}
                 sx={{
-                  fontSize: 11,
-                  display: "block",
-                  transform: "translateY(1px)",
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "success.main",
-                  fontWeight: 600,
+                  color: statusDisplay.color,
+                  ml: "auto",
+                  mt: "1px",
                 }}
               >
-                Indexed
-              </Typography>
-            </Stack>
+                <Box
+                  sx={{
+                    width: 11,
+                    height: 11,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {statusDisplay.inProgress ? (
+                    <CircularProgress
+                      size={10}
+                      thickness={6}
+                      sx={{ color: statusDisplay.color, display: "block" }}
+                    />
+                  ) : document.status === "FAILED" ? (
+                    <ErrorOutlineIcon sx={{ fontSize: 11, display: "block" }} />
+                  ) : (
+                    <CheckCircleOutlineIcon sx={{ fontSize: 11, display: "block" }} />
+                  )}
+                </Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: statusDisplay.color,
+                    fontWeight: 600,
+                    lineHeight: 1,
+                  }}
+                >
+                  {statusDisplay.label}
+                </Typography>
+              </Stack>
+            </Tooltip>
           </Box>
         </Box>
       </Stack>

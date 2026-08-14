@@ -41,18 +41,26 @@ export default function DocumentList({
 
   return (
     <Stack spacing={1}>
-      {documents.map((document) => (
-        <DocumentItem
-          key={document.id}
-          document={document}
-          selected={selectedDocumentIds.has(
-            document.id
-          )}
-          onSelect={onSelect}
-          onInfo={onInfo}
-          onDelete={onDelete}
-        />
-      ))}
+      {documents.map((document) => {
+        const isReady = document.status === "COMPLETED";
+
+        return (
+          <DocumentItem
+            key={document.id}
+            document={document}
+            selected={selectedDocumentIds.has(
+              document.id
+            )}
+            // Ingestion still in progress or failed — selecting it as
+            // chat context would just retrieve empty results, so the
+            // row is shown but not clickable-for-select until it's ready.
+            disabled={!isReady}
+            onSelect={isReady ? onSelect : undefined}
+            onInfo={onInfo}
+            onDelete={onDelete}
+          />
+        );
+      })}
     </Stack>
   );
 }
