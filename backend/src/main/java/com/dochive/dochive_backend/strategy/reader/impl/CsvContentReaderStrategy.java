@@ -24,9 +24,7 @@ public class CsvContentReaderStrategy implements ContentReaderStrategy {
 
     @Override
     public boolean supports(String contentType, String filename) {
-        boolean contentTypeMatch = contentType != null && (contentType.toLowerCase().contains("csv")
-                || contentType.equalsIgnoreCase("application/vnd.ms-excel") // some browsers mislabel CSV this way
-        );
+        boolean contentTypeMatch = contentType != null && contentType.toLowerCase().contains("csv");
         boolean extensionMatch = filename != null && filename.toLowerCase().endsWith(".csv");
 
         // Content-Type headers for CSV are notoriously unreliable across

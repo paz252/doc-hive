@@ -103,7 +103,7 @@ export default function DocumentUpload({
         ref={inputRef}
         type="file"
         hidden
-        accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.csv"
+        accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.csv,.xlsx,.xls"
         onChange={handleChange}
       />
 
@@ -182,7 +182,7 @@ export default function DocumentUpload({
             fontSize: "0.7rem",
           })}
         >
-          PDF, Word, Markdown, TXT, Image, CSV<br/>(max 25MB)
+          PDF, Word, Markdown, Image, Excel<br/>(max 25MB)
         </Typography>
       </Paper>
     </>

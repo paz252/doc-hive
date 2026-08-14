@@ -26,6 +26,7 @@ public class AsyncIngestionProcessor {
     private final DocumentRepository documentRepository;
     private final ContentReaderResolver readerResolver;
     private final ChunkingService chunkingService;
+    private final TextSanitizer textSanitizer;
 
     @Async("ingestionExecutor")
     public void process(String documentId, byte[] fileBytes, String contentType, String filename) {
@@ -35,6 +36,14 @@ public class AsyncIngestionProcessor {
             Resource resource = new ByteArrayResource(fileBytes);
             ContentReaderStrategy strategy = readerResolver.resolve(contentType, filename);
             List<Document> rawDocuments = strategy.read(resource);
+
+            // Sanitize immediately after extraction — before chunking splits text
+            List<Document> sanitizedDocuments = textSanitizer.sanitizeDocuments(rawDocuments);
+
+            if (sanitizedDocuments.isEmpty()) {
+                finalizeSuccess(documentId, 0); // nothing extractable after cleaning
+                return;
+            }
 
             updateStatus(documentId, IngestionStatus.CHUNKING, null);
             List<Document> chunks = chunkingService.chunk(rawDocuments);
