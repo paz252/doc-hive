@@ -46,7 +46,7 @@ public class AsyncIngestionProcessor {
             }
 
             updateStatus(documentId, IngestionStatus.CHUNKING, null);
-            List<Document> chunks = chunkingService.chunk(rawDocuments);
+            List<Document> chunks = chunkingService.chunk(sanitizedDocuments);
 
             List<Document> enrichedChunks = chunks.stream()
                     .map(doc -> doc.mutate()
