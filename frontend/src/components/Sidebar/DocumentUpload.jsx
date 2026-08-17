@@ -9,6 +9,8 @@ import {
 
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
+const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+
 export default function DocumentUpload({
   uploading,
   onUpload,
@@ -16,6 +18,7 @@ export default function DocumentUpload({
   const inputRef = useRef(null);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState(null);
 
   /*
    * Tracks nested dragenter/dragleave events so the
@@ -25,13 +28,30 @@ export default function DocumentUpload({
   const dragCounter = useRef(0);
 
   const handleClick = () => {
+    setError(null);
     inputRef.current?.click();
+  };
+
+  const validateFile = (file) => {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      setError(`File is ${sizeMb}MB. Max allowed size is 2MB.`);
+      return false;
+    }
+
+    setError(null);
+    return true;
   };
 
   const handleChange = async (event) => {
     const file = event.target.files?.[0];
 
     if (!file) {
+      return;
+    }
+
+    if (!validateFile(file)) {
+      event.target.value = "";
       return;
     }
 
@@ -94,6 +114,10 @@ export default function DocumentUpload({
       return;
     }
 
+    if (!validateFile(file)) {
+      return;
+    }
+
     await onUpload(file);
   };
 
@@ -117,7 +141,9 @@ export default function DocumentUpload({
         sx={(theme) => ({
           p: 2,
           cursor: uploading ? "default" : "pointer",
-          border: `1px dashed ${theme.palette.primary.main}`,
+          border: `1px dashed ${
+            error ? theme.palette.error.main : theme.palette.primary.main
+          }`,
           backgroundColor: uploading
             ? theme.palette.action.disabledBackground
             : isDragging
@@ -141,17 +167,21 @@ export default function DocumentUpload({
         })}
       >
         <Box
-          sx={{
+          sx={(theme) => ({
             width: 44,
             height: 44,
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            backgroundColor: "primary.main",
-            color: "primary.contrastText",
+            backgroundColor: error
+              ? theme.palette.error.main
+              : "primary.main",
+            color: error
+              ? theme.palette.error.contrastText
+              : "primary.contrastText",
             mb: 1,
-          }}
+          })}
         >
           {uploading ? (
             <CircularProgress
@@ -166,23 +196,34 @@ export default function DocumentUpload({
         <Typography
           variant="body2"
           fontWeight={700}
-          sx={{ mb: 0.1 }}
+          sx={(theme) => ({
+            mb: 0.1,
+            color: error ? theme.palette.error.main : "inherit",
+          })}
         >
           {uploading
             ? "Uploading..."
-            : isDragging
-              ? "Drop to upload"
-              : "Upload Files or Drag here"}
+            : error
+              ? "Upload failed"
+              : isDragging
+                ? "Drop to upload"
+                : "Upload Files or Drag here"}
         </Typography>
 
         <Typography
           variant="caption"
           sx={(theme) => ({
-            color: theme.palette.text.secondary,
+            color: error
+              ? theme.palette.error.main
+              : theme.palette.text.secondary,
             fontSize: "0.7rem",
           })}
         >
-          PDF, Word, Markdown, Image, Excel<br/>(max 25MB)
+          {error ? error : (
+            <>
+              PDF, Word, Markdown, Image, Excel<br/>(max 2MB)
+            </>
+          )}
         </Typography>
       </Paper>
     </>
