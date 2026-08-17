@@ -9,7 +9,7 @@ import {
 
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
-const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
 export default function DocumentUpload({
   uploading,
@@ -35,7 +35,7 @@ export default function DocumentUpload({
   const validateFile = (file) => {
     if (file.size > MAX_FILE_SIZE_BYTES) {
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      setError(`File is ${sizeMb}MB. Max allowed size is 2MB.`);
+      setError(`File is ${sizeMb}MB. Max allowed size is 10MB.`);
       return false;
     }
 
@@ -221,7 +221,7 @@ export default function DocumentUpload({
         >
           {error ? error : (
             <>
-              PDF, Word, Markdown, Image, Excel<br/>(max 2MB)
+              PDF, Word, Markdown, Image, Excel<br/>(max 10MB)
             </>
           )}
         </Typography>
