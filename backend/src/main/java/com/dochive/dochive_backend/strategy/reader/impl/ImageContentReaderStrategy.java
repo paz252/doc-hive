@@ -1,5 +1,6 @@
 package com.dochive.dochive_backend.strategy.reader.impl;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -27,6 +28,7 @@ public class ImageContentReaderStrategy implements ContentReaderStrategy {
             "image/png", "image/jpeg", "image/jpg", "image/tiff", "image/bmp");
 
     private final TesseractOcrEngine ocrEngine;
+    private static final int MAX_DIMENSION = 1600;
 
     @Override
     public boolean supports(String contentType, String filename) {
@@ -44,7 +46,12 @@ public class ImageContentReaderStrategy implements ContentReaderStrategy {
                 return List.of();
             }
 
-            String text = ocrEngine.extractText(image);
+            /*
+             * Resize before OCR.
+             */
+            BufferedImage scaled = downscaleIfLarge(image, MAX_DIMENSION);
+
+            String text = ocrEngine.extractText(scaled);
             if (text == null || text.isBlank()) {
                 return List.of();
             }
@@ -59,6 +66,31 @@ public class ImageContentReaderStrategy implements ContentReaderStrategy {
             System.err.printf("OCR failed for image %s: %s%n", resource.getFilename(), e.getMessage());
             return List.of();
         }
+    }
+
+    private BufferedImage downscaleIfLarge(BufferedImage original, int maxDimension) {
+
+        int width = original.getWidth();
+        int height = original.getHeight();
+
+        if (width <= maxDimension && height <= maxDimension) {
+            return original;
+        }
+
+        double scale = (double) maxDimension / Math.max(width, height);
+        int newWidth = Math.max(1, (int) (width * scale));
+        int newHeight = Math.max(1, (int) (height * scale));
+
+        BufferedImage resized = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = resized.createGraphics();
+
+        try {
+            g.drawImage(original, 0, 0, newWidth, newHeight, null);
+        } finally {
+            g.dispose();
+        }
+
+        return resized;
     }
 
     @Override

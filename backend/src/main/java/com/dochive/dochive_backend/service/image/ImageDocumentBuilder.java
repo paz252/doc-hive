@@ -2,7 +2,6 @@ package com.dochive.dochive_backend.service.image;
 
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
-import java.awt.RenderingHints;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -24,76 +23,166 @@ import lombok.RequiredArgsConstructor;
 public class ImageDocumentBuilder {
     private final TesseractOcrEngine ocrEngine;
 
-    private static final int OCR_PARALLELISM = 3; // tune down if CPU-constrained on Render
+    private static final int OCR_PARALLELISM = 1;
     private static final int MAX_DIMENSION = 1600; // OCR accuracy plateaus well below this
-    private static final int PER_IMAGE_TIMEOUT_SECONDS = 15;
     private static final int MAX_IMAGES_PER_DOCUMENT = 20; // guard against degenerate image-bomb PDFs
 
-    public List<Document> buildFromImages(List<ExtractedImage> images, String sourceFileName) {
-        if (images.isEmpty())
+    public List<Document> buildFromImages(
+            List<ExtractedImage> images,
+            String sourceFileName) {
+
+        if (images == null || images.isEmpty()) {
             return List.of();
+        }
 
         List<ExtractedImage> capped = images.size() > MAX_IMAGES_PER_DOCUMENT
                 ? images.subList(0, MAX_IMAGES_PER_DOCUMENT)
                 : images;
 
+        System.out.printf(
+                "Starting OCR for %d image(s) in %s%n",
+                capped.size(),
+                sourceFileName);
+
         ExecutorService ocrExecutor = Executors.newFixedThreadPool(
                 Math.min(OCR_PARALLELISM, capped.size()));
 
         try {
+
             List<CompletableFuture<List<Document>>> futures = capped.stream()
                     .map(image -> CompletableFuture.supplyAsync(
-                            () -> ocrWithTimeout(image, sourceFileName), ocrExecutor))
+                            () -> ocrSingleImage(
+                                    image,
+                                    sourceFileName),
+                            ocrExecutor))
                     .toList();
 
             return futures.stream()
                     .map(CompletableFuture::join)
                     .flatMap(List::stream)
                     .toList();
+
         } finally {
             ocrExecutor.shutdown();
+
+            try {
+                if (!ocrExecutor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    ocrExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                ocrExecutor.shutdownNow();
+            }
         }
     }
 
-    private List<Document> ocrWithTimeout(ExtractedImage image, String sourceFileName) {
-        try {
-            return CompletableFuture
-                    .supplyAsync(() -> ocrSingleImage(image, sourceFileName))
-                    .get(PER_IMAGE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            System.err.printf("OCR timed out/failed for image in %s (location %d): %s%n",
-                    sourceFileName, image.locationIndex(), e.getMessage());
-            return List.of();
-        }
-    }
+    private List<Document> ocrSingleImage(
+            ExtractedImage image,
+            String sourceFileName) {
 
-    private List<Document> ocrSingleImage(ExtractedImage image, String sourceFileName) {
+        long totalStart = System.currentTimeMillis();
+
         try {
-            BufferedImage original = ImageIO.read(new ByteArrayInputStream(image.data()));
-            if (original == null)
+            // Decode image
+            long decodeStart = System.currentTimeMillis();
+
+            BufferedImage original = ImageIO.read(
+                    new ByteArrayInputStream(image.data()));
+
+            long decodeTime = System.currentTimeMillis() - decodeStart;
+
+            if (original == null) {
+                System.err.printf(
+                        "Could not decode image %d in %s%n",
+                        image.locationIndex(),
+                        sourceFileName);
+
                 return List.of();
+            }
 
-            BufferedImage scaled = downscaleIfLarge(original, MAX_DIMENSION);
+            // Resize before OCR
+            long resizeStart = System.currentTimeMillis();
+
+            BufferedImage scaled = downscaleIfLarge(
+                    original,
+                    MAX_DIMENSION);
+
+            long resizeTime = System.currentTimeMillis() - resizeStart;
+
+            System.out.printf(
+                    "OCR image %d | original=%dx%d | scaled=%dx%d%n",
+                    image.locationIndex(),
+                    original.getWidth(),
+                    original.getHeight(),
+                    scaled.getWidth(),
+                    scaled.getHeight());
+
+            // OCR
+            long ocrStart = System.currentTimeMillis();
 
             String text = ocrEngine.extractText(scaled);
-            if (text == null || text.isBlank())
-                return List.of();
 
-            Document doc = new Document(text.trim(), java.util.Map.of(
-                    "contentSource", "EMBEDDED_IMAGE",
-                    "locationIndex", image.locationIndex(),
-                    "imageFormat", image.format(),
-                    "sourceFile", sourceFileName != null ? sourceFileName : "unknown"));
+            long ocrTime = System.currentTimeMillis() - ocrStart;
+
+            long totalTime = System.currentTimeMillis() - totalStart;
+
+            System.out.printf(
+                    "OCR image %d completed | decode=%dms | resize=%dms | OCR=%dms | total=%dms%n",
+                    image.locationIndex(),
+                    decodeTime,
+                    resizeTime,
+                    ocrTime,
+                    totalTime);
+
+            if (text == null || text.isBlank()) {
+                System.out.printf(
+                        "OCR image %d produced no text%n",
+                        image.locationIndex());
+
+                return List.of();
+            }
+
+            // Convert OCR result to Spring AI Document
+            Document doc = new Document(
+                    text.trim(),
+                    java.util.Map.of(
+                            "contentSource",
+                            "EMBEDDED_IMAGE",
+
+                            "locationIndex",
+                            image.locationIndex(),
+
+                            "imageFormat",
+                            image.format(),
+
+                            "sourceFile",
+                            sourceFileName != null
+                                    ? sourceFileName
+                                    : "unknown"));
 
             return List.of(doc);
+
         } catch (Exception e) {
-            System.err.printf("OCR failed for image in %s (location %d): %s%n",
-                    sourceFileName, image.locationIndex(), e.getMessage());
+
+            long totalTime = System.currentTimeMillis() - totalStart;
+
+            System.err.printf(
+                    "OCR failed for image %d in %s after %dms: %s%n",
+                    image.locationIndex(),
+                    sourceFileName,
+                    totalTime,
+                    e.getMessage());
+
+            e.printStackTrace();
+
             return List.of();
         }
     }
 
-    private BufferedImage downscaleIfLarge(BufferedImage original, int maxDimension) {
+    private BufferedImage downscaleIfLarge(
+            BufferedImage original,
+            int maxDimension) {
+
         int width = original.getWidth();
         int height = original.getHeight();
 
@@ -101,15 +190,35 @@ public class ImageDocumentBuilder {
             return original;
         }
 
-        double scale = (double) maxDimension / Math.max(width, height);
-        int newWidth = (int) (width * scale);
-        int newHeight = (int) (height * scale);
+        double scale = (double) maxDimension
+                / Math.max(width, height);
 
-        BufferedImage resized = new BufferedImage(newWidth, newHeight, original.getType());
+        int newWidth = Math.max(1, (int) (width * scale));
+
+        int newHeight = Math.max(1, (int) (height * scale));
+
+        /*
+         * TYPE_CUSTOM can cause problems with some images.
+         * TYPE_INT_RGB provides a predictable format for OCR.
+         */
+        BufferedImage resized = new BufferedImage(
+                newWidth,
+                newHeight,
+                BufferedImage.TYPE_INT_RGB);
+
         Graphics2D g = resized.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.drawImage(original, 0, 0, newWidth, newHeight, null);
-        g.dispose();
+
+        try {
+            g.drawImage(
+                    original,
+                    0,
+                    0,
+                    newWidth,
+                    newHeight,
+                    null);
+        } finally {
+            g.dispose();
+        }
 
         return resized;
     }

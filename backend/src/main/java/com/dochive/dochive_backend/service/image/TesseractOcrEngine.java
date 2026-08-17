@@ -15,9 +15,11 @@ public class TesseractOcrEngine {
     @Value("${tesseract.datapath:/usr/share/tesseract-ocr/5/tessdata}")
     private String tessDataPath;
 
-    // Tesseract instances aren't thread-safe. ThreadLocal gives each OCR
-    // worker thread its own instance, reused across calls on that thread —
-    // engine init cost is paid once per thread, not once per image.
+    /*
+     * Tesseract instances aren't thread-safe.
+     *
+     * Each OCR worker gets its own instance and reuses it.
+     */
     private final ThreadLocal<ITesseract> engine = ThreadLocal.withInitial(this::buildEngine);
 
     private ITesseract buildEngine() {
