@@ -19,7 +19,13 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Install Tesseract OCR binary and English language pack
-RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng && apk upgrade --no-cache
+
+# Verify Tesseract installation during image build
+RUN tesseract --version && tesseract --list-langs
+
+# Find the actual tessdata directory and expose it
+ENV TESSDATA_PREFIX=/usr/share/tessdata
 
 # Install security patches and add a non-root group/user for Alpine
 RUN apk update && apk upgrade && \
@@ -35,4 +41,4 @@ COPY --from=builder /app/target/*.jar dockhive.jar
 EXPOSE 8080
 
 # Set production flags and inject the dynamic Spring Profile
-ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "-Dserver.port=${PORT}", "dockhive.jar"]
+ENTRYPOINT ["java", "-jar", "-Dspring.profiles.active=prod", "-Dserver.port=8080", "dockhive.jar"]
