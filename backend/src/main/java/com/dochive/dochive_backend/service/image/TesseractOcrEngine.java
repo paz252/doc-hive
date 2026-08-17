@@ -1,10 +1,12 @@
 package com.dochive.dochive_backend.service.image;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import net.sourceforge.tess4j.ITesseract;
 import net.sourceforge.tess4j.Tesseract;
 import net.sourceforge.tess4j.TesseractException;
@@ -12,7 +14,7 @@ import net.sourceforge.tess4j.TesseractException;
 @Component
 public class TesseractOcrEngine {
 
-    @Value("${tesseract.datapath:/usr/share/tesseract-ocr/5/tessdata}")
+    @Value("${tesseract.datapath}")
     private String tessDataPath;
 
     /*
@@ -20,7 +22,44 @@ public class TesseractOcrEngine {
      *
      * Each OCR worker gets its own instance and reuses it.
      */
-    private final ThreadLocal<ITesseract> engine = ThreadLocal.withInitial(this::buildEngine);
+    private ThreadLocal<ITesseract> engine;
+
+    @PostConstruct
+    public void validateTesseractData() {
+
+        File tessDataDir = new File(tessDataPath);
+        File engDataFile = new File(tessDataDir, "eng.traineddata");
+
+        System.out.println(
+                "Tesseract datapath: " + tessDataDir.getAbsolutePath());
+
+        System.out.println(
+                "Tesseract tessdata exists: " + tessDataDir.exists());
+
+        System.out.println(
+                "eng.traineddata exists: " + engDataFile.exists());
+
+        if (!tessDataDir.isDirectory()) {
+            throw new IllegalStateException(
+                    "Tesseract tessdata directory does not exist: "
+                            + tessDataDir.getAbsolutePath());
+        }
+
+        if (!engDataFile.isFile()) {
+            throw new IllegalStateException(
+                    "Tesseract language data is missing: "
+                            + engDataFile.getAbsolutePath());
+        }
+
+        /*
+         * Only create the ThreadLocal after the tessdata
+         * directory has been validated.
+         */
+        engine = ThreadLocal.withInitial(this::buildEngine);
+
+        System.out.println(
+                "Tesseract initialization validation successful.");
+    }
 
     private ITesseract buildEngine() {
         Tesseract tesseract = new Tesseract();
