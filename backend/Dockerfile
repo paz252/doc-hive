@@ -24,9 +24,6 @@ RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-eng && apk upgrade --no-
 # Verify Tesseract installation during image build
 RUN tesseract --version && tesseract --list-langs
 
-# Find the actual tessdata directory and expose it
-ENV TESSDATA_PREFIX=/usr/share/tessdata
-
 # Install security patches and add a non-root group/user for Alpine
 RUN apk update && apk upgrade && \
     addgroup -S amangroup && adduser -S amansaxena -G amangroup
