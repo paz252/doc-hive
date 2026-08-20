@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
@@ -62,7 +63,7 @@ public class PolymorphicRagService {
                         .subscribe(
                                 chunk -> {
                                     try {
-                                        emitter.send(SseEmitter.event().data(chunk));
+                                        emitter.send(SseEmitter.event().data(chunk, MediaType.APPLICATION_JSON));
                                     } catch (IOException e) {
                                         emitter.completeWithError(e);
                                     }

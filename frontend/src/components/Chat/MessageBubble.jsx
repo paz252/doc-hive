@@ -1,7 +1,6 @@
 import { useState } from "react";
 
 import {
-  Avatar,
   Box,
   IconButton,
   Paper,
@@ -12,6 +11,8 @@ import {
 
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "./Chat.css";
 
 export default function MessageBubble({
@@ -41,6 +42,13 @@ export default function MessageBubble({
     }
   };
 
+  const isEmpty = !isUser && message.content === "";
+  // Render as markdown only once the assistant message has finished
+  // streaming — avoids ReactMarkdown flickering on incomplete syntax
+  // (e.g. an unclosed "**" or a half-written list item) while tokens
+  // are still arriving.
+  const showMarkdown = !isUser && !message.isStreaming && !isEmpty;
+
   return (
     <Box
       sx={{
@@ -69,6 +77,8 @@ export default function MessageBubble({
             display: "flex",
             flexDirection: "column",
             alignItems: isUser ? "flex-end" : "flex-start",
+            minWidth: 0,
+            width: showMarkdown ? "100%" : "auto",
           }}
         >
           <Paper
@@ -87,23 +97,102 @@ export default function MessageBubble({
                 ? "primary.contrastText"
                 : "text.primary",
               borderRadius: 1,
+              minWidth: 0,
             }}
           >
-            <Typography
-              variant="body1"
-              sx={{
-                whiteSpace: "pre-wrap",
-                overflowWrap: "anywhere",
-              }}
-            >
-              {message.content}
-              {!isUser &&
-                message.content === "" && (
-                  <span className="typing-indicator">
-                    ●●●
-                  </span>
-                )}
-            </Typography>
+            {isEmpty ? (
+              <Typography variant="body1">
+                <span className="typing-indicator">●●●</span>
+              </Typography>
+            ) : showMarkdown ? (
+              <Box
+                className="markdown-content"
+                sx={{
+                  fontSize: "1rem",
+                  lineHeight: 1.6,
+                  overflowWrap: "anywhere",
+                  "& > *:first-of-type": { marginTop: 0 },
+                  "& > *:last-child": { marginBottom: 0 },
+                  "& p": { margin: "0 0 0.75em" },
+                  "& ul, & ol": {
+                    margin: "0 0 0.75em",
+                    paddingLeft: "1.4em",
+                  },
+                  "& li": { marginBottom: "0.25em" },
+                  "& li > p": { margin: 0 },
+                  "& h1, & h2, & h3, & h4": {
+                    margin: "0.9em 0 0.4em",
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                  },
+                  "& h1": { fontSize: "1.25rem" },
+                  "& h2": { fontSize: "1.15rem" },
+                  "& h3": { fontSize: "1.05rem" },
+                  "& code": {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.08)"
+                        : "rgba(0,0,0,0.06)",
+                    borderRadius: 0.5,
+                    px: 0.5,
+                    py: 0.1,
+                    fontSize: "0.85em",
+                    fontFamily: "monospace",
+                  },
+                  "& pre": {
+                    bgcolor: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? "rgba(255,255,255,0.06)"
+                        : "rgba(0,0,0,0.04)",
+                    borderRadius: 1,
+                    p: 1.5,
+                    overflowX: "auto",
+                    mb: 1,
+                  },
+                  "& pre code": {
+                    bgcolor: "transparent",
+                    p: 0,
+                  },
+                  "& blockquote": {
+                    borderLeft: "3px solid",
+                    borderColor: "divider",
+                    pl: 1.5,
+                    ml: 0,
+                    color: "text.secondary",
+                  },
+                  "& table": {
+                    borderCollapse: "collapse",
+                    width: "100%",
+                    mb: 1,
+                    fontSize: "0.9em",
+                  },
+                  "& th, & td": {
+                    border: 1,
+                    borderColor: "divider",
+                    px: 1,
+                    py: 0.5,
+                    textAlign: "left",
+                  },
+                  "& a": {
+                    color: "primary.main",
+                  },
+                }}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              </Box>
+            ) : (
+              <Typography
+                variant="body1"
+                sx={{
+                  whiteSpace: "pre-wrap",
+                  overflowWrap: "anywhere",
+                }}
+              >
+                {message.content}
+              </Typography>
+            )}
           </Paper>
 
           <Stack

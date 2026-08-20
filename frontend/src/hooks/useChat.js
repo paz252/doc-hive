@@ -38,6 +38,7 @@ export default function useChat(documentIds = []) {
         id: assistantMessageId,
         role: "assistant",
         content: "",
+        isStreaming: true,
         timestamp: Date.now(),
       };
 
@@ -48,17 +49,36 @@ export default function useChat(documentIds = []) {
       ]);
 
       const controller = new AbortController();
-
       abortControllerRef.current = controller;
 
-      const appendToAssistantMessage = (chunk) => {
+      // Throttle re-renders: buffer incoming text and flush once per
+      // animation frame instead of on every chunk. Prevents ReactMarkdown
+      // (or even plain text state updates) from re-rendering hundreds of
+      // times per response.
+      let pendingText = "";
+      let frameHandle = null;
+
+      const flush = () => {
+        frameHandle = null;
+        if (!pendingText) return;
+
+        const textToAppend = pendingText;
+        pendingText = "";
+
         setMessages((previous) =>
           previous.map((message) =>
             message.id === assistantMessageId
-              ? { ...message, content: message.content + chunk }
+              ? { ...message, content: message.content + textToAppend }
               : message
           )
         );
+      };
+
+      const appendToAssistantMessage = (chunk) => {
+        pendingText += chunk;
+        if (frameHandle == null) {
+          frameHandle = requestAnimationFrame(flush);
+        }
       };
 
       try {
@@ -66,18 +86,15 @@ export default function useChat(documentIds = []) {
           `${API_BASE_URL}/api/v1/chat/stream`,
           {
             method: "POST",
-
             headers: {
               "Content-Type": "application/json",
               Accept: "text/event-stream",
             },
-
             body: JSON.stringify({
               engine: "DOCHIVE",
               documentIds: [...documentIdsRef.current],
               query: trimmedQuery,
             }),
-
             signal: controller.signal,
           }
         );
@@ -111,31 +128,69 @@ export default function useChat(documentIds = []) {
 
           buffer += decoder.decode(value, { stream: true });
 
-          // SSE lines are newline-delimited
-          const lines = buffer.split("\n");
-          buffer = lines.pop(); // last part may be incomplete, keep for next read
+          // SSE events are delimited by a BLANK LINE ("\n\n"), not a
+          // single "\n". Splitting on "\n" alone breaks apart multi-line
+          // data payloads that belong to the same event.
+          const events = buffer.split("\n\n");
+          buffer = events.pop() || ""; // last part may be incomplete
 
-          for (const line of lines) {
-            if (!line.startsWith("data:")) continue;
+          for (const event of events) {
+            const lines = event.split("\n");
 
-            // Strip ONLY the "data:" prefix — keep any leading space, it's meaningful content
-            const chunk = line.slice(5);
+            const dataLines = lines
+              .filter((line) => line.startsWith("data:"))
+              .map((line) => line.slice(5).replace(/^ /, ""));
 
-            if (chunk === "[DONE]") continue;
+            if (dataLines.length === 0) continue;
+
+            const rawData = dataLines.join("\n");
+            if (!rawData || rawData === "[DONE]") continue;
+
+            let chunk;
+            try {
+              // Backend now sends JSON-encoded strings, so real newlines arrive
+              // as escaped "\n" within one line and need to be decoded back.
+              chunk = JSON.parse(rawData);
+            } catch {
+              // Fallback in case any non-JSON event slips through
+              chunk = rawData;
+            }
 
             appendToAssistantMessage(chunk);
           }
         }
 
-        // flush any remaining buffered line without a trailing newline
-        if (buffer.startsWith("data:")) {
-          const chunk = buffer.slice(5);
+        // Flush any remaining buffered (incomplete) event on stream end
+        if (buffer.startsWith("data:") || buffer.includes("\ndata:")) {
+          const lines = buffer.split("\n");
+          const dataLines = lines
+            .filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice(5).replace(/^ /, ""));
+
+          const chunk = dataLines.join("\n");
           if (chunk && chunk !== "[DONE]") {
             appendToAssistantMessage(chunk);
           }
         }
+
+        // Ensure the last buffered frame is flushed before marking done
+        if (frameHandle != null) {
+          cancelAnimationFrame(frameHandle);
+        }
+        flush();
       } catch (err) {
+        if (frameHandle != null) {
+          cancelAnimationFrame(frameHandle);
+        }
+
         if (err?.name === "AbortError" || controller.signal.aborted) {
+          setMessages((previous) =>
+            previous.map((message) =>
+              message.id === assistantMessageId
+                ? { ...message, isStreaming: false }
+                : message
+            )
+          );
           return;
         }
 
@@ -153,6 +208,16 @@ export default function useChat(documentIds = []) {
           )
         );
       } finally {
+        // Mark streaming complete so the UI can swap from plain text
+        // to rendered markdown.
+        setMessages((previous) =>
+          previous.map((message) =>
+            message.id === assistantMessageId
+              ? { ...message, isStreaming: false }
+              : message
+          )
+        );
+
         if (abortControllerRef.current === controller) {
           abortControllerRef.current = null;
           setIsLoading(false);
